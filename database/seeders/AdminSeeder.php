@@ -14,7 +14,6 @@ class AdminSeeder extends Seeder
      */
     public function run(): void
     {
-        DB::table('users')->truncate();
         $user = User::query()->create([
             'name' => 'Admin',
             'password' => bcrypt('5xM0I73Em5gN'),

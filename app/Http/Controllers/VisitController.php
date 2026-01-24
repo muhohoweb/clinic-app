@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Visit;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -12,7 +13,9 @@ class VisitController extends Controller
      */
     public function index()
     {
-        return Inertia::render('visits/Index');
+        return Inertia::render('visits/Index',[
+            'visits' => Visit::with('patient')->get()->all()
+        ]);
     }
 
     /**
