@@ -18,7 +18,7 @@ import visits from '@/routes/visits';
 import balances from '@/routes/balances';
 import {type NavItem} from '@/types';
 import {Link} from '@inertiajs/vue3';
-import {BookOpen, Folder, LayoutGrid} from 'lucide-vue-next';
+import {BookOpen, Folder, Handshake, LayoutGrid, User2Icon, UsersIcon} from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
 
 const mainNavItems: NavItem[] = [
@@ -30,12 +30,12 @@ const mainNavItems: NavItem[] = [
   {
     title: 'Patients',
     href: patients.index(),
-    icon: LayoutGrid,
+    icon: User2Icon,
   },
   {
     title: 'Visits',
     href: visits.index(),
-    icon: LayoutGrid,
+    icon: UsersIcon,
   },
   {
     title: 'Payments',
@@ -45,7 +45,7 @@ const mainNavItems: NavItem[] = [
   {
     title: 'Balances',
     href: balances.index(),
-    icon: LayoutGrid,
+    icon: Handshake,
   },
 ];
 
