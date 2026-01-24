@@ -23,6 +23,11 @@ const mainNavItems: NavItem[] = [
         href: dashboard(),
         icon: LayoutGrid,
     },
+  {
+        title: 'Patients',
+        href: patients.index(),
+        icon: LayoutGrid,
+    },
 ];
 
 const footerNavItems: NavItem[] = [
