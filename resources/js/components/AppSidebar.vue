@@ -50,11 +50,7 @@ const mainNavItems: NavItem[] = [
 ];
 
 const footerNavItems: NavItem[] = [
-  {
-    title: 'App',
-    href: '#',
-    icon: Folder,
-  },
+
 ];
 </script>
 

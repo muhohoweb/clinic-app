@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\BalanceController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PatientsController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\VisitController;
@@ -19,6 +20,7 @@ Route::get('/', function () {
 
 
 Route::middleware(['auth'])->group(function () {
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/patients', [PatientsController::class, 'index'])->name('patients.index');
     Route::get('/visits', [VisitController::class, 'index'])->name('visits.index');
     Route::get('/payments', [PaymentController::class, 'index'])->name('payments.index');
@@ -26,8 +28,6 @@ Route::middleware(['auth'])->group(function () {
 });
 
 
-Route::get('dashboard', function () {
-    return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+
 
 require __DIR__.'/settings.php';
