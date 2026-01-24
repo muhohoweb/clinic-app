@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class BalanceController extends Controller
 {
@@ -11,7 +12,7 @@ class BalanceController extends Controller
      */
     public function index()
     {
-        //
+        return Inertia::render('balances/Index');
     }
 
     /**
@@ -19,7 +20,7 @@ class BalanceController extends Controller
      */
     public function create()
     {
-        //
+
     }
 
     /**

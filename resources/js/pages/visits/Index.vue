@@ -17,8 +17,8 @@ const breadcrumbs: BreadcrumbItem[] = [
 
   <AppLayout :breadcrumbs="breadcrumbs">
 
-    <div>
-      Patients
+    <div class="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
+      Visits
     </div>
   </AppLayout>
 </template>
