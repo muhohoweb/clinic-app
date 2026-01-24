@@ -14,24 +14,24 @@ class DashboardController extends Controller
     public function index()
     {
         // Basic counts
-        $totalPatients = Patient::count();
-        $totalVisits = Visit::count();
-        $totalPayments = Payment::count();
+        $totalPatients = Patient::query()->count();
+        $totalVisits = Visit::query()->count();
+        $totalPayments = Payment::query()->count();
 
         // Payment statistics
-        $totalCharged = Payment::sum('amount_charged');
-        $totalPaid = Payment::sum('amount_paid');
-        $totalBalance = Payment::sum('balance');
+        $totalCharged = Payment::query()->sum('amount_charged');
+        $totalPaid = Payment::query()->sum('amount_paid');
+        $totalBalance = Payment::query()->sum('balance');
 
         // Today's statistics
-        $todayVisits = Visit::whereDate('created_at', today())->count();
-        $todayPayments = Payment::whereDate('created_at', today())->sum('amount_paid');
+        $todayVisits = Visit::query()->whereDate('created_at', today())->count();
+        $todayPayments = Payment::query()->whereDate('created_at', today())->sum('amount_paid');
 
         // This month's statistics
-        $monthVisits = Visit::whereMonth('created_at', now()->month)
+        $monthVisits = Visit::query()->whereMonth('created_at', now()->month)
             ->whereYear('created_at', now()->year)
             ->count();
-        $monthRevenue = Payment::whereMonth('created_at', now()->month)
+        $monthRevenue = Payment::query()->whereMonth('created_at', now()->month)
             ->whereYear('created_at', now()->year)
             ->sum('amount_paid');
 
@@ -48,16 +48,16 @@ class DashboardController extends Controller
             ->get();
 
         // Gender distribution
-        $malePatients = Patient::where('gender', 'male')->count();
-        $femalePatients = Patient::where('gender', 'female')->count();
+        $malePatients = Patient::query()->where('gender', 'male')->count();
+        $femalePatients = Patient::query()->where('gender', 'female')->count();
 
         // Payment methods breakdown
-        $paymentsByMethod = Payment::select('mode_of_payment', DB::raw('count(*) as count'))
+        $paymentsByMethod = Payment::query()->select('mode_of_payment', DB::raw('count(*) as count'))
             ->groupBy('mode_of_payment')
             ->get();
 
         // Top diagnoses (last 30 days)
-        $topDiagnoses = Visit::select('diagnosis', DB::raw('count(*) as count'))
+        $topDiagnoses = Visit::query()->select('diagnosis', DB::raw('count(*) as count'))
             ->where('created_at', '>=', now()->subDays(30))
             ->groupBy('diagnosis')
             ->orderByDesc('count')
