@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Payment;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -12,7 +13,12 @@ class PaymentController extends Controller
      */
     public function index()
     {
-        return Inertia::render('patients/Index');
+        return Inertia::render('payments/Index', [
+            'payments' => Payment::with(['visit.patient'])
+                ->orderBy('created_at', 'desc')
+                ->get()
+                ->all()
+        ]);
     }
 
     /**

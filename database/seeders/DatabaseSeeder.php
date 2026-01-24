@@ -18,9 +18,11 @@ class DatabaseSeeder extends Seeder
         DB::statement('SET FOREIGN_KEY_CHECKS=0;');
 
         // Truncate in correct order (child tables first)
+        DB::table('users')->truncate();
         DB::table('visits')->truncate();
         DB::table('patients')->truncate();
-        DB::table('users')->truncate();
+        DB::table('payments')->truncate();
+
 
         // Re-enable foreign key checks
         DB::statement('SET FOREIGN_KEY_CHECKS=1;');
@@ -28,7 +30,8 @@ class DatabaseSeeder extends Seeder
         $this->call([
             AdminSeeder::class,
             PatientSeeder::class,
-            VisitSeeder::class
+            VisitSeeder::class,
+            PaymentSeeder::class,
         ]);
     }
 }
