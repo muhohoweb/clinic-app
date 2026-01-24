@@ -53,6 +53,7 @@ jobs:
             **/node_modules/**
             **/tests/**
             **/vendor/**
+
       - name: Download build files from public
         uses: pressidium/lftp-mirror-action@v1
         with:
@@ -62,7 +63,8 @@ jobs:
           pass: ${{ secrets.FTP_PASSWORD }}
           remoteDir: '/domains/clinic.medicareers.co.ke/public/build'
           localDir: './temp-build'
-          options: '--use-ssl'
+          forceSSL: 'true'
+          verifyCertificate: 'false'
 
       - name: Upload build files to public_html
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
