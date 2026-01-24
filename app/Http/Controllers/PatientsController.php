@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Patient;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -12,7 +13,9 @@ class PatientsController extends Controller
      */
     public function index()
     {
-        return Inertia::render('patients/Index');
+        return Inertia::render('patients/Index',[
+            'patients' => Patient::query()->get()->all()
+        ]);
     }
 
     /**
