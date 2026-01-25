@@ -22,7 +22,13 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/patients/{patient}', [PatientsController::class, 'update'])->name('patients.update');
     Route::delete('/patients/{patient}', [PatientsController::class, 'destroy'])->name('patients.destroy');
 
+    // Visits Routes
     Route::get('/visits', [VisitController::class, 'index'])->name('visits.index');
+    Route::post('/visits', [VisitController::class, 'store'])->name('visits.store');
+    Route::put('/visits/{visit}', [VisitController::class, 'update'])->name('visits.update');
+    Route::delete('/visits/{visit}', [VisitController::class, 'destroy'])->name('visits.destroy');
+    Route::get('/visits/search-patient', [VisitController::class, 'searchPatient'])->name('visits.search-patient');
+
     Route::get('/payments', [PaymentController::class, 'index'])->name('payments.index');
     Route::get('/balances', [BalanceController::class, 'index'])->name('balances.index');
 });

@@ -2,8 +2,48 @@
 import AppLayout from '@/layouts/AppLayout.vue';
 import { dashboard } from '@/routes';
 import { type BreadcrumbItem } from '@/types';
-import { Head } from '@inertiajs/vue3';
-import { Edit, Trash2, Eye } from 'lucide-vue-next';
+import { Head, router, useForm } from '@inertiajs/vue3';
+import { Edit, Trash2, Eye, Plus, Search } from 'lucide-vue-next';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { toast } from 'vue-sonner'
+import { ref, watch } from 'vue'
+import axios from 'axios'
 
 const props = defineProps<{
   visits?: any[];
@@ -28,6 +68,233 @@ const formatDate = (date: string) => {
     day: 'numeric'
   });
 };
+
+// Patient Search State
+const patientSearch = ref('')
+const searchedPatient = ref<any>(null)
+const isSearching = ref(false)
+
+// Add Modal State
+const isAddDialogOpen = ref(false)
+const addForm = useForm({
+  patient_id: '',
+  complaints: '',
+  history_of_presenting_illness: '',
+  allergies: '',
+  physical_examination: '',
+  lab_test: '',
+  imaging: '',
+  diagnosis: '',
+  type_of_diagnosis: '',
+  prescriptions: '',
+})
+
+// Edit Modal State
+const isEditDialogOpen = ref(false)
+const editingVisit = ref<any>(null)
+const editForm = useForm({
+  id: '',
+  patient_id: '',
+  complaints: '',
+  history_of_presenting_illness: '',
+  allergies: '',
+  physical_examination: '',
+  lab_test: '',
+  imaging: '',
+  diagnosis: '',
+  type_of_diagnosis: '',
+  prescriptions: '',
+})
+
+// View Modal State
+const isViewDialogOpen = ref(false)
+const viewingVisit = ref<any>(null)
+
+// Delete Modal State
+const isDeleteDialogOpen = ref(false)
+const deletingVisit = ref<any>(null)
+
+// Search Patient Function
+const searchPatient = async () => {
+  if (!patientSearch.value.trim()) {
+    searchedPatient.value = null
+    return
+  }
+
+  isSearching.value = true
+  try {
+    const response = await axios.get('/visits/search-patient', {
+      params: { search: patientSearch.value }
+    })
+
+    if (response.data.patient) {
+      searchedPatient.value = response.data.patient
+      addForm.patient_id = response.data.patient.id
+      toast.success('Patient Found', {
+        description: `${response.data.patient.name} - ${response.data.patient.number}`,
+      })
+    } else {
+      searchedPatient.value = null
+      addForm.patient_id = ''
+      toast.error('Patient Not Found', {
+        description: 'No patient found with that phone number or patient number.',
+      })
+    }
+  } catch (error) {
+    console.error('Search error:', error)
+    toast.error('Search Failed', {
+      description: 'Unable to search for patient. Please try again.',
+    })
+  } finally {
+    isSearching.value = false
+  }
+}
+
+// Watch for patient search input changes
+watch(patientSearch, () => {
+  if (!patientSearch.value.trim()) {
+    searchedPatient.value = null
+    addForm.patient_id = ''
+  }
+})
+
+// Open Add Dialog
+const openAddDialog = () => {
+  addForm.reset()
+  addForm.clearErrors()
+  patientSearch.value = ''
+  searchedPatient.value = null
+  isAddDialogOpen.value = true
+}
+
+// Handle Add Submit
+const handleAddSubmit = () => {
+  if (!addForm.patient_id) {
+    toast.error('Patient Required', {
+      description: 'Please search and select a patient first.',
+    })
+    return
+  }
+
+  addForm.post('/visits', {
+    preserveScroll: true,
+    onSuccess: () => {
+      toast.success('Visit Added', {
+        description: 'Visit has been recorded successfully.',
+      })
+      isAddDialogOpen.value = false
+      addForm.reset()
+      patientSearch.value = ''
+      searchedPatient.value = null
+    },
+    onError: (errors) => {
+      console.error('Validation errors:', errors)
+      toast.error('Validation Error', {
+        description: 'Please check the form for errors.',
+      })
+    },
+  })
+}
+
+// Close Add Dialog
+const closeAddDialog = () => {
+  isAddDialogOpen.value = false
+  addForm.reset()
+  addForm.clearErrors()
+  patientSearch.value = ''
+  searchedPatient.value = null
+}
+
+// Open Edit Dialog
+const openEditDialog = (visit: any) => {
+  editingVisit.value = visit
+  editForm.id = visit.id
+  editForm.patient_id = visit.patient_id
+  editForm.complaints = visit.complaints
+  editForm.history_of_presenting_illness = visit.history_of_presenting_illness
+  editForm.allergies = visit.allergies || ''
+  editForm.physical_examination = visit.physical_examination
+  editForm.lab_test = visit.lab_test
+  editForm.imaging = visit.imaging
+  editForm.diagnosis = visit.diagnosis
+  editForm.type_of_diagnosis = visit.type_of_diagnosis
+  editForm.prescriptions = visit.prescriptions
+  editForm.clearErrors()
+  isEditDialogOpen.value = true
+}
+
+// Handle Edit Submit
+const handleEditSubmit = () => {
+  editForm.put(`/visits/${editForm.id}`, {
+    preserveScroll: true,
+    onSuccess: () => {
+      toast.success('Visit Updated', {
+        description: 'Visit information has been updated successfully.',
+      })
+      isEditDialogOpen.value = false
+      editingVisit.value = null
+    },
+    onError: (errors) => {
+      console.error('Validation errors:', errors)
+      toast.error('Validation Error', {
+        description: 'Please check the form for errors.',
+      })
+    },
+  })
+}
+
+// Close Edit Dialog
+const closeEditDialog = () => {
+  isEditDialogOpen.value = false
+  editingVisit.value = null
+  editForm.reset()
+  editForm.clearErrors()
+}
+
+// Open View Dialog
+const openViewDialog = (visit: any) => {
+  viewingVisit.value = visit
+  isViewDialogOpen.value = true
+}
+
+// Close View Dialog
+const closeViewDialog = () => {
+  isViewDialogOpen.value = false
+  viewingVisit.value = null
+}
+
+// Open Delete Dialog
+const openDeleteDialog = (visit: any) => {
+  deletingVisit.value = visit
+  isDeleteDialogOpen.value = true
+}
+
+// Handle Delete Confirm
+const handleDeleteConfirm = () => {
+  if (!deletingVisit.value) return
+
+  router.delete(`/visits/${deletingVisit.value.id}`, {
+    preserveScroll: true,
+    onSuccess: () => {
+      toast.success('Visit Deleted', {
+        description: 'Visit has been deleted successfully.',
+      })
+      isDeleteDialogOpen.value = false
+      deletingVisit.value = null
+    },
+    onError: () => {
+      toast.error('Delete Failed', {
+        description: 'Unable to delete visit. Please try again.',
+      })
+    },
+  })
+}
+
+// Close Delete Dialog
+const closeDeleteDialog = () => {
+  isDeleteDialogOpen.value = false
+  deletingVisit.value = null
+}
 </script>
 
 <template>
@@ -58,80 +325,93 @@ const formatDate = (date: string) => {
       <!-- Visits Table -->
       <div class="relative min-h-[100vh] flex-1 rounded-xl border border-gray-200 bg-white md:min-h-min dark:border-gray-700 dark:bg-gray-800">
         <div class="p-6">
-          <div class="mb-4">
+          <div class="mb-4 flex items-center justify-between">
             <h2 class="text-xl font-semibold">Visits List</h2>
+            <Button @click="openAddDialog">
+              <Plus class="mr-2 h-4 w-4" />
+              Add Visit
+            </Button>
           </div>
 
           <!-- Table -->
           <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
-            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-              <thead class="bg-gray-50 dark:bg-gray-900">
-              <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">#</th>
-                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Date</th>
-                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Patient</th>
-                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Complaints</th>
-                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Diagnosis</th>
-                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Type</th>
-                <th class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Actions</th>
-              </tr>
-              </thead>
-              <tbody class="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-800">
-              <tr v-if="visitsList.length === 0">
-                <td colspan="7" class="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
-                  No visits found.
-                </td>
-              </tr>
-              <tr v-for="(visit, index) in visitsList" :key="visit.id" class="hover:bg-gray-50 dark:hover:bg-gray-700">
-                <td class="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">
-                  {{ index + 1 }}
-                </td>
-                <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-900 dark:text-white">
-                  {{ formatDate(visit.created_at) }}
-                </td>
-                <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-900 dark:text-white">
-                  {{ visit.patient?.name || 'N/A' }}
-                  <div class="text-xs text-gray-500">{{ visit.patient?.number || '' }}</div>
-                </td>
-                <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                  <div class="max-w-xs truncate">{{ visit.complaints }}</div>
-                </td>
-                <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                  <div class="max-w-xs truncate">{{ visit.diagnosis }}</div>
-                </td>
-                <td class="whitespace-nowrap px-6 py-4 text-sm">
-                  <span
-                      class="inline-flex rounded-full px-2 py-1 text-xs font-semibold capitalize"
-                      :class="{
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>#</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Patient</TableHead>
+                  <TableHead>Complaints</TableHead>
+                  <TableHead>Diagnosis</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead class="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <TableRow v-if="visitsList.length === 0">
+                  <TableCell colspan="7" class="text-center text-gray-500 dark:text-gray-400 h-24">
+                    No visits found.
+                  </TableCell>
+                </TableRow>
+                <TableRow v-for="(visit, index) in visitsList" :key="visit.id">
+                  <TableCell class="font-medium">
+                    {{ index + 1 }}
+                  </TableCell>
+                  <TableCell>
+                    {{ formatDate(visit.created_at) }}
+                  </TableCell>
+                  <TableCell>
+                    <div class="font-medium">{{ visit.patient?.name || 'N/A' }}</div>
+                    <div class="text-xs text-gray-500">{{ visit.patient?.number || '' }}</div>
+                  </TableCell>
+                  <TableCell>
+                    <div class="max-w-xs truncate">{{ visit.complaints }}</div>
+                  </TableCell>
+                  <TableCell>
+                    <div class="max-w-xs truncate">{{ visit.diagnosis }}</div>
+                  </TableCell>
+                  <TableCell>
+                    <span
+                        class="inline-flex rounded-full px-2 py-1 text-xs font-semibold"
+                        :class="{
                         'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200': visit.type_of_diagnosis === 'Clinical',
                         'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200': visit.type_of_diagnosis === 'Laboratory confirmed',
                         'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200': visit.type_of_diagnosis === 'Radiological',
                         'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200': visit.type_of_diagnosis === 'Presumptive',
                         'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200': visit.type_of_diagnosis === 'Differential'
                       }"
-                  >
-                    {{ visit.type_of_diagnosis }}
-                  </span>
-                </td>
-                <td class="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
-                  <div class="flex items-center justify-end gap-2">
-                    <button class="inline-flex items-center gap-1 rounded-md bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600">
-                      <Eye class="h-4 w-4" />
-                      View
-                    </button>
-                    <button class="inline-flex items-center gap-1 rounded-md bg-blue-100 px-3 py-1.5 text-sm font-medium text-blue-700 hover:bg-blue-200 dark:bg-blue-900 dark:text-blue-200 dark:hover:bg-blue-800">
-                      <Edit class="h-4 w-4" />
-                      Edit
-                    </button>
-                    <button class="inline-flex items-center gap-1 rounded-md bg-red-100 px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-200 dark:bg-red-900 dark:text-red-200 dark:hover:bg-red-800">
-                      <Trash2 class="h-4 w-4" />
-                      Delete
-                    </button>
-                  </div>
-                </td>
-              </tr>
-              </tbody>
-            </table>
+                    >
+                      {{ visit.type_of_diagnosis }}
+                    </span>
+                  </TableCell>
+                  <TableCell class="text-right">
+                    <div class="flex items-center justify-end gap-2">
+                      <button
+                          @click="openViewDialog(visit)"
+                          class="inline-flex items-center gap-1 rounded-md bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+                      >
+                        <Eye class="h-4 w-4" />
+                        View
+                      </button>
+                      <button
+                          @click="openEditDialog(visit)"
+                          class="inline-flex items-center gap-1 rounded-md bg-blue-100 px-3 py-1.5 text-sm font-medium text-blue-700 hover:bg-blue-200 dark:bg-blue-900 dark:text-blue-200 dark:hover:bg-blue-800"
+                      >
+                        <Edit class="h-4 w-4" />
+                        Edit
+                      </button>
+                      <button
+                          @click="openDeleteDialog(visit)"
+                          class="inline-flex items-center gap-1 rounded-md bg-red-100 px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-200 dark:bg-red-900 dark:text-red-200 dark:hover:bg-red-800"
+                      >
+                        <Trash2 class="h-4 w-4" />
+                        Delete
+                      </button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
           </div>
 
           <div class="mt-4 text-sm text-gray-500 dark:text-gray-400">
@@ -140,5 +420,420 @@ const formatDate = (date: string) => {
         </div>
       </div>
     </div>
+
+    <!-- Add Visit Dialog -->
+    <Dialog v-model:open="isAddDialogOpen">
+      <DialogContent class="sm:max-w-[700px] max-h-[90vh] overflow-y-auto" @interact-outside="(e) => e.preventDefault()">
+        <DialogHeader>
+          <DialogTitle>Add New Visit</DialogTitle>
+          <DialogDescription>
+            Search for a patient and enter visit information below.
+          </DialogDescription>
+        </DialogHeader>
+
+        <form @submit.prevent="handleAddSubmit">
+          <div class="grid gap-4 py-4">
+            <!-- Patient Search -->
+            <div class="grid gap-2">
+              <Label for="patient-search">Search Patient (Phone or Patient Number)</Label>
+              <div class="flex gap-2">
+                <Input
+                    id="patient-search"
+                    v-model="patientSearch"
+                    placeholder="Enter phone number or patient number"
+                    @keyup.enter.prevent="searchPatient"
+                />
+                <Button type="button" @click="searchPatient" :disabled="isSearching">
+                  <Search class="h-4 w-4 mr-2" />
+                  {{ isSearching ? 'Searching...' : 'Search' }}
+                </Button>
+              </div>
+              <div v-if="searchedPatient" class="p-3 bg-green-50 dark:bg-green-900/20 rounded-md border border-green-200 dark:border-green-800">
+                <p class="text-sm font-medium text-green-900 dark:text-green-100">
+                  Patient: {{ searchedPatient.name }}
+                </p>
+                <p class="text-xs text-green-700 dark:text-green-300">
+                  {{ searchedPatient.number }} | {{ searchedPatient.phone_number }}
+                </p>
+              </div>
+            </div>
+
+            <!-- Row 1: Complaints and History -->
+            <div class="grid grid-cols-2 gap-4">
+              <div class="grid gap-2">
+                <Label for="add-complaints">Complaints</Label>
+                <Textarea
+                    id="add-complaints"
+                    v-model="addForm.complaints"
+                    placeholder="Enter patient complaints"
+                    rows="3"
+                    required
+                />
+              </div>
+
+              <div class="grid gap-2">
+                <Label for="add-history">History of Presenting Illness</Label>
+                <Textarea
+                    id="add-history"
+                    v-model="addForm.history_of_presenting_illness"
+                    placeholder="Enter history"
+                    rows="3"
+                    required
+                />
+              </div>
+            </div>
+
+            <!-- Row 2: Allergies and Physical Examination -->
+            <div class="grid grid-cols-2 gap-4">
+              <div class="grid gap-2">
+                <Label for="add-allergies">Allergies</Label>
+                <Textarea
+                    id="add-allergies"
+                    v-model="addForm.allergies"
+                    placeholder="Enter allergies (optional)"
+                    rows="3"
+                />
+              </div>
+
+              <div class="grid gap-2">
+                <Label for="add-physical">Physical Examination</Label>
+                <Textarea
+                    id="add-physical"
+                    v-model="addForm.physical_examination"
+                    placeholder="Enter physical examination findings"
+                    rows="3"
+                    required
+                />
+              </div>
+            </div>
+
+            <!-- Row 3: Lab Test and Imaging -->
+            <div class="grid grid-cols-2 gap-4">
+              <div class="grid gap-2">
+                <Label for="add-lab">Lab Test</Label>
+                <Textarea
+                    id="add-lab"
+                    v-model="addForm.lab_test"
+                    placeholder="Enter lab test results"
+                    rows="3"
+                    required
+                />
+              </div>
+
+              <div class="grid gap-2">
+                <Label for="add-imaging">Imaging</Label>
+                <Textarea
+                    id="add-imaging"
+                    v-model="addForm.imaging"
+                    placeholder="Enter imaging results"
+                    rows="3"
+                    required
+                />
+              </div>
+            </div>
+
+            <!-- Row 4: Diagnosis and Type -->
+            <div class="grid grid-cols-2 gap-4">
+              <div class="grid gap-2">
+                <Label for="add-diagnosis">Diagnosis</Label>
+                <Textarea
+                    id="add-diagnosis"
+                    v-model="addForm.diagnosis"
+                    placeholder="Enter diagnosis"
+                    rows="3"
+                    required
+                />
+              </div>
+
+              <div class="grid gap-2">
+                <Label for="add-type">Type of Diagnosis</Label>
+                <Select v-model="addForm.type_of_diagnosis" required>
+                  <SelectTrigger id="add-type">
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Clinical">Clinical</SelectItem>
+                    <SelectItem value="Laboratory confirmed">Laboratory confirmed</SelectItem>
+                    <SelectItem value="Radiological">Radiological</SelectItem>
+                    <SelectItem value="Presumptive">Presumptive</SelectItem>
+                    <SelectItem value="Differential">Differential</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <!-- Row 5: Prescriptions -->
+            <div class="grid gap-2">
+              <Label for="add-prescriptions">Prescriptions</Label>
+              <Textarea
+                  id="add-prescriptions"
+                  v-model="addForm.prescriptions"
+                  placeholder="Enter prescriptions"
+                  rows="4"
+                  required
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" @click="closeAddDialog">
+              Cancel
+            </Button>
+            <Button type="submit" :disabled="!searchedPatient">
+              Save Visit
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+
+    <!-- Edit Visit Dialog -->
+    <Dialog v-model:open="isEditDialogOpen">
+      <DialogContent class="sm:max-w-[700px] max-h-[90vh] overflow-y-auto" @interact-outside="(e) => e.preventDefault()">
+        <DialogHeader>
+          <DialogTitle>Edit Visit</DialogTitle>
+          <DialogDescription>
+            Make changes to the visit information.
+          </DialogDescription>
+        </DialogHeader>
+
+        <form @submit.prevent="handleEditSubmit">
+          <div class="grid gap-4 py-4">
+            <!-- Patient Info (Read-only) -->
+            <div v-if="editingVisit" class="p-3 bg-gray-50 dark:bg-gray-900/20 rounded-md border border-gray-200 dark:border-gray-700">
+              <p class="text-sm font-medium">Patient: {{ editingVisit.patient?.name }}</p>
+              <p class="text-xs text-gray-500">{{ editingVisit.patient?.number }}</p>
+            </div>
+
+            <!-- Row 1: Complaints and History -->
+            <div class="grid grid-cols-2 gap-4">
+              <div class="grid gap-2">
+                <Label for="edit-complaints">Complaints</Label>
+                <Textarea
+                    id="edit-complaints"
+                    v-model="editForm.complaints"
+                    placeholder="Enter patient complaints"
+                    rows="3"
+                    required
+                />
+              </div>
+
+              <div class="grid gap-2">
+                <Label for="edit-history">History of Presenting Illness</Label>
+                <Textarea
+                    id="edit-history"
+                    v-model="editForm.history_of_presenting_illness"
+                    placeholder="Enter history"
+                    rows="3"
+                    required
+                />
+              </div>
+            </div>
+
+            <!-- Row 2: Allergies and Physical Examination -->
+            <div class="grid grid-cols-2 gap-4">
+              <div class="grid gap-2">
+                <Label for="edit-allergies">Allergies</Label>
+                <Textarea
+                    id="edit-allergies"
+                    v-model="editForm.allergies"
+                    placeholder="Enter allergies (optional)"
+                    rows="3"
+                />
+              </div>
+
+              <div class="grid gap-2">
+                <Label for="edit-physical">Physical Examination</Label>
+                <Textarea
+                    id="edit-physical"
+                    v-model="editForm.physical_examination"
+                    placeholder="Enter physical examination findings"
+                    rows="3"
+                    required
+                />
+              </div>
+            </div>
+
+            <!-- Row 3: Lab Test and Imaging -->
+            <div class="grid grid-cols-2 gap-4">
+              <div class="grid gap-2">
+                <Label for="edit-lab">Lab Test</Label>
+                <Textarea
+                    id="edit-lab"
+                    v-model="editForm.lab_test"
+                    placeholder="Enter lab test results"
+                    rows="3"
+                    required
+                />
+              </div>
+
+              <div class="grid gap-2">
+                <Label for="edit-imaging">Imaging</Label>
+                <Textarea
+                    id="edit-imaging"
+                    v-model="editForm.imaging"
+                    placeholder="Enter imaging results"
+                    rows="3"
+                    required
+                />
+              </div>
+            </div>
+
+            <!-- Row 4: Diagnosis and Type -->
+            <div class="grid grid-cols-2 gap-4">
+              <div class="grid gap-2">
+                <Label for="edit-diagnosis">Diagnosis</Label>
+                <Textarea
+                    id="edit-diagnosis"
+                    v-model="editForm.diagnosis"
+                    placeholder="Enter diagnosis"
+                    rows="3"
+                    required
+                />
+              </div>
+
+              <div class="grid gap-2">
+                <Label for="edit-type">Type of Diagnosis</Label>
+                <Select v-model="editForm.type_of_diagnosis" required>
+                  <SelectTrigger id="edit-type">
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Clinical">Clinical</SelectItem>
+                    <SelectItem value="Laboratory confirmed">Laboratory confirmed</SelectItem>
+                    <SelectItem value="Radiological">Radiological</SelectItem>
+                    <SelectItem value="Presumptive">Presumptive</SelectItem>
+                    <SelectItem value="Differential">Differential</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <!-- Row 5: Prescriptions -->
+            <div class="grid gap-2">
+              <Label for="edit-prescriptions">Prescriptions</Label>
+              <Textarea
+                  id="edit-prescriptions"
+                  v-model="editForm.prescriptions"
+                  placeholder="Enter prescriptions"
+                  rows="4"
+                  required
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" @click="closeEditDialog">
+              Cancel
+            </Button>
+            <Button type="submit">
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+
+    <!-- View Visit Dialog -->
+    <Dialog v-model:open="isViewDialogOpen">
+      <DialogContent class="sm:max-w-[700px] max-h-[90vh] overflow-y-auto" @interact-outside="(e) => e.preventDefault()">
+        <DialogHeader>
+          <DialogTitle>Visit Details</DialogTitle>
+          <DialogDescription>
+            View complete visit information.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div v-if="viewingVisit" class="grid gap-4 py-4">
+          <!-- Patient Info -->
+          <div class="p-3 bg-gray-50 dark:bg-gray-900/20 rounded-md border border-gray-200 dark:border-gray-700">
+            <p class="text-sm font-medium">Patient: {{ viewingVisit.patient?.name }}</p>
+            <p class="text-xs text-gray-500">{{ viewingVisit.patient?.number }} | {{ formatDate(viewingVisit.created_at) }}</p>
+          </div>
+
+          <!-- Row 1: Complaints and History -->
+          <div class="grid grid-cols-2 gap-4">
+            <div class="grid gap-2">
+              <Label class="text-muted-foreground">Complaints</Label>
+              <p class="text-sm">{{ viewingVisit.complaints }}</p>
+            </div>
+
+            <div class="grid gap-2">
+              <Label class="text-muted-foreground">History of Presenting Illness</Label>
+              <p class="text-sm">{{ viewingVisit.history_of_presenting_illness }}</p>
+            </div>
+          </div>
+
+          <!-- Row 2: Allergies and Physical Examination -->
+          <div class="grid grid-cols-2 gap-4">
+            <div class="grid gap-2">
+              <Label class="text-muted-foreground">Allergies</Label>
+              <p class="text-sm">{{ viewingVisit.allergies || 'None' }}</p>
+            </div>
+
+            <div class="grid gap-2">
+              <Label class="text-muted-foreground">Physical Examination</Label>
+              <p class="text-sm">{{ viewingVisit.physical_examination }}</p>
+            </div>
+          </div>
+
+          <!-- Row 3: Lab Test and Imaging -->
+          <div class="grid grid-cols-2 gap-4">
+            <div class="grid gap-2">
+              <Label class="text-muted-foreground">Lab Test</Label>
+              <p class="text-sm">{{ viewingVisit.lab_test }}</p>
+            </div>
+
+            <div class="grid gap-2">
+              <Label class="text-muted-foreground">Imaging</Label>
+              <p class="text-sm">{{ viewingVisit.imaging }}</p>
+            </div>
+          </div>
+
+          <!-- Row 4: Diagnosis and Type -->
+          <div class="grid grid-cols-2 gap-4">
+            <div class="grid gap-2">
+              <Label class="text-muted-foreground">Diagnosis</Label>
+              <p class="text-sm">{{ viewingVisit.diagnosis }}</p>
+            </div>
+
+            <div class="grid gap-2">
+              <Label class="text-muted-foreground">Type of Diagnosis</Label>
+              <p class="text-sm">{{ viewingVisit.type_of_diagnosis }}</p>
+            </div>
+          </div>
+
+          <!-- Prescriptions -->
+          <div class="grid gap-2">
+            <Label class="text-muted-foreground">Prescriptions</Label>
+            <p class="text-sm">{{ viewingVisit.prescriptions }}</p>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button type="button" @click="closeViewDialog">
+            Close
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    <!-- Delete Visit Alert Dialog -->
+    <AlertDialog v-model:open="isDeleteDialogOpen">
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This action cannot be undone. This will permanently delete this visit record from the system.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel @click="closeDeleteDialog">Cancel</AlertDialogCancel>
+          <AlertDialogAction @click="handleDeleteConfirm" class="bg-red-600 hover:bg-red-700">
+            Delete
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   </AppLayout>
 </template>
