@@ -736,83 +736,213 @@ const closeDeleteDialog = () => {
 
     <!-- View Visit Dialog -->
     <Dialog v-model:open="isViewDialogOpen">
-      <DialogContent class="sm:max-w-[700px] max-h-[90vh] overflow-y-auto" @interact-outside="(e) => e.preventDefault()">
+      <DialogContent class="sm:max-w-[900px] max-h-[90vh] overflow-y-auto" @interact-outside="(e) => e.preventDefault()">
         <DialogHeader>
           <DialogTitle>Visit Details</DialogTitle>
           <DialogDescription>
-            View complete visit information.
+            Complete visit information and patient history
           </DialogDescription>
         </DialogHeader>
 
-        <div v-if="viewingVisit" class="grid gap-4 py-4">
-          <!-- Patient Info -->
-          <div class="p-3 bg-gray-50 dark:bg-gray-900/20 rounded-md border border-gray-200 dark:border-gray-700">
-            <p class="text-sm font-medium">Patient: {{ viewingVisit.patient?.name }}</p>
-            <p class="text-xs text-gray-500">{{ viewingVisit.patient?.number }} | {{ formatDate(viewingVisit.created_at) }}</p>
-          </div>
-
-          <!-- Row 1: Complaints and History -->
-          <div class="grid grid-cols-2 gap-4">
-            <div class="grid gap-2">
-              <Label class="text-muted-foreground">Complaints</Label>
-              <p class="text-sm">{{ viewingVisit.complaints }}</p>
-            </div>
-
-            <div class="grid gap-2">
-              <Label class="text-muted-foreground">History of Presenting Illness</Label>
-              <p class="text-sm">{{ viewingVisit.history_of_presenting_illness }}</p>
-            </div>
-          </div>
-
-          <!-- Row 2: Allergies and Physical Examination -->
-          <div class="grid grid-cols-2 gap-4">
-            <div class="grid gap-2">
-              <Label class="text-muted-foreground">Allergies</Label>
-              <p class="text-sm">{{ viewingVisit.allergies || 'None' }}</p>
-            </div>
-
-            <div class="grid gap-2">
-              <Label class="text-muted-foreground">Physical Examination</Label>
-              <p class="text-sm">{{ viewingVisit.physical_examination }}</p>
+        <div v-if="viewingVisit" class="grid gap-6 py-4">
+          <!-- Patient Header Card -->
+          <div class="rounded-lg border border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50 p-4 dark:border-gray-700 dark:from-blue-950 dark:to-indigo-950">
+            <div class="flex items-start justify-between">
+              <div>
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                  {{ viewingVisit.patient?.name }}
+                </h3>
+                <div class="mt-1 flex items-center gap-4 text-sm text-gray-600 dark:text-gray-300">
+                  <span class="font-medium">{{ viewingVisit.patient?.number }}</span>
+                  <span>•</span>
+                  <span>{{ viewingVisit.patient?.age }} years old</span>
+                  <span>•</span>
+                  <span class="capitalize">{{ viewingVisit.patient?.gender }}</span>
+                  <span>•</span>
+                  <span>{{ viewingVisit.patient?.phone_number }}</span>
+                </div>
+              </div>
+              <div class="text-right">
+                <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Visit Date</div>
+                <div class="text-lg font-semibold text-gray-900 dark:text-white">
+                  {{ formatDate(viewingVisit.created_at) }}
+                </div>
+              </div>
             </div>
           </div>
 
-          <!-- Row 3: Lab Test and Imaging -->
-          <div class="grid grid-cols-2 gap-4">
-            <div class="grid gap-2">
-              <Label class="text-muted-foreground">Lab Test</Label>
-              <p class="text-sm">{{ viewingVisit.lab_test }}</p>
+          <!-- Current Visit Information -->
+          <div class="space-y-4">
+            <h4 class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wide">
+              Current Visit Information
+            </h4>
+
+            <!-- Complaints & History -->
+            <div class="grid grid-cols-2 gap-4">
+              <div class="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+                <Label class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                  Chief Complaints
+                </Label>
+                <p class="mt-2 text-sm text-gray-900 dark:text-gray-100">
+                  {{ viewingVisit.complaints }}
+                </p>
+              </div>
+
+              <div class="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+                <Label class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                  History of Presenting Illness
+                </Label>
+                <p class="mt-2 text-sm text-gray-900 dark:text-gray-100">
+                  {{ viewingVisit.history_of_presenting_illness }}
+                </p>
+              </div>
             </div>
 
-            <div class="grid gap-2">
-              <Label class="text-muted-foreground">Imaging</Label>
-              <p class="text-sm">{{ viewingVisit.imaging }}</p>
+            <!-- Allergies & Physical Examination -->
+            <div class="grid grid-cols-2 gap-4">
+              <div class="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+                <Label class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                  Allergies
+                </Label>
+                <p class="mt-2 text-sm text-gray-900 dark:text-gray-100">
+                  {{ viewingVisit.allergies || 'No known allergies' }}
+                </p>
+              </div>
+
+              <div class="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+                <Label class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                  Physical Examination
+                </Label>
+                <p class="mt-2 text-sm text-gray-900 dark:text-gray-100">
+                  {{ viewingVisit.physical_examination }}
+                </p>
+              </div>
+            </div>
+
+            <!-- Lab Test & Imaging -->
+            <div class="grid grid-cols-2 gap-4">
+              <div class="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+                <Label class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                  Laboratory Tests
+                </Label>
+                <p class="mt-2 text-sm text-gray-900 dark:text-gray-100">
+                  {{ viewingVisit.lab_test }}
+                </p>
+              </div>
+
+              <div class="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+                <Label class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                  Imaging Studies
+                </Label>
+                <p class="mt-2 text-sm text-gray-900 dark:text-gray-100">
+                  {{ viewingVisit.imaging }}
+                </p>
+              </div>
+            </div>
+
+            <!-- Diagnosis -->
+            <div class="rounded-lg border-2 border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-950">
+              <div class="flex items-start justify-between">
+                <div class="flex-1">
+                  <Label class="text-xs font-semibold text-blue-700 dark:text-blue-300 uppercase tracking-wide">
+                    Diagnosis
+                  </Label>
+                  <p class="mt-2 text-sm font-medium text-blue-900 dark:text-blue-100">
+                    {{ viewingVisit.diagnosis }}
+                  </p>
+                </div>
+                <span
+                    class="inline-flex rounded-full px-3 py-1 text-xs font-semibold"
+                    :class="{
+                    'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200': viewingVisit.type_of_diagnosis === 'Clinical',
+                    'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200': viewingVisit.type_of_diagnosis === 'Laboratory confirmed',
+                    'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200': viewingVisit.type_of_diagnosis === 'Radiological',
+                    'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200': viewingVisit.type_of_diagnosis === 'Presumptive',
+                    'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200': viewingVisit.type_of_diagnosis === 'Differential'
+                  }"
+                >
+                  {{ viewingVisit.type_of_diagnosis }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Prescriptions -->
+            <div class="rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-800 dark:bg-green-950">
+              <Label class="text-xs font-semibold text-green-700 dark:text-green-300 uppercase tracking-wide">
+                Prescriptions & Treatment Plan
+              </Label>
+              <p class="mt-2 text-sm text-green-900 dark:text-green-100 whitespace-pre-line">
+                {{ viewingVisit.prescriptions }}
+              </p>
             </div>
           </div>
 
-          <!-- Row 4: Diagnosis and Type -->
-          <div class="grid grid-cols-2 gap-4">
-            <div class="grid gap-2">
-              <Label class="text-muted-foreground">Diagnosis</Label>
-              <p class="text-sm">{{ viewingVisit.diagnosis }}</p>
+          <!-- Patient Visit History -->
+          <div class="space-y-4">
+            <div class="flex items-center justify-between">
+              <h4 class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wide">
+                Previous Visits History
+              </h4>
+              <span class="text-xs text-gray-500 dark:text-gray-400">
+                {{ visitsList.filter(v => v.patient_id === viewingVisit.patient_id && v.id !== viewingVisit.id).length }} previous visit(s)
+              </span>
             </div>
 
-            <div class="grid gap-2">
-              <Label class="text-muted-foreground">Type of Diagnosis</Label>
-              <p class="text-sm">{{ viewingVisit.type_of_diagnosis }}</p>
-            </div>
-          </div>
+            <div class="max-h-[300px] space-y-3 overflow-y-auto rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-900">
+              <div
+                  v-if="visitsList.filter(v => v.patient_id === viewingVisit.patient_id && v.id !== viewingVisit.id).length === 0"
+                  class="text-center py-8 text-sm text-gray-500 dark:text-gray-400"
+              >
+                No previous visits recorded for this patient
+              </div>
 
-          <!-- Prescriptions -->
-          <div class="grid gap-2">
-            <Label class="text-muted-foreground">Prescriptions</Label>
-            <p class="text-sm">{{ viewingVisit.prescriptions }}</p>
+              <div
+                  v-for="visit in visitsList.filter(v => v.patient_id === viewingVisit.patient_id && v.id !== viewingVisit.id).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())"
+                  :key="visit.id"
+                  class="rounded-md border border-gray-200 bg-white p-3 dark:border-gray-600 dark:bg-gray-800"
+              >
+                <div class="flex items-start justify-between">
+                  <div class="flex-1">
+                    <div class="flex items-center gap-2">
+                      <span class="text-xs font-semibold text-gray-900 dark:text-white">
+                        {{ formatDate(visit.created_at) }}
+                      </span>
+                      <span
+                          class="inline-flex rounded-full px-2 py-0.5 text-xs font-semibold"
+                          :class="{
+                          'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200': visit.type_of_diagnosis === 'Clinical',
+                          'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200': visit.type_of_diagnosis === 'Laboratory confirmed',
+                          'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200': visit.type_of_diagnosis === 'Radiological',
+                          'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200': visit.type_of_diagnosis === 'Presumptive',
+                          'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200': visit.type_of_diagnosis === 'Differential'
+                        }"
+                      >
+                        {{ visit.type_of_diagnosis }}
+                      </span>
+                    </div>
+                    <p class="mt-1 text-xs text-gray-600 dark:text-gray-400">
+                      <span class="font-medium">Complaints:</span> {{ visit.complaints }}
+                    </p>
+                    <p class="mt-1 text-xs font-medium text-gray-900 dark:text-white">
+                      <span class="font-normal text-gray-600 dark:text-gray-400">Diagnosis:</span> {{ visit.diagnosis }}
+                    </p>
+                    <p class="mt-1 text-xs text-gray-600 dark:text-gray-400">
+                      <span class="font-medium">Treatment:</span> {{ visit.prescriptions.length > 100 ? visit.prescriptions.substring(0, 100) + '...' : visit.prescriptions }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
-        <DialogFooter>
-          <Button type="button" @click="closeViewDialog">
+        <DialogFooter class="gap-2">
+          <Button type="button" variant="outline" @click="closeViewDialog">
             Close
+          </Button>
+          <Button type="button" @click="openEditDialog(viewingVisit); closeViewDialog()">
+            <Edit class="mr-2 h-4 w-4" />
+            Edit Visit
           </Button>
         </DialogFooter>
       </DialogContent>
