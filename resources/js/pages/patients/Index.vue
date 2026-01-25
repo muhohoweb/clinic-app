@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
 import { dashboard } from '@/routes';
+import patients from '@/routes/patients';
 import { type BreadcrumbItem } from '@/types';
-import { Head } from '@inertiajs/vue3';
+import { Head, router, useForm } from '@inertiajs/vue3';
 import { Edit, Trash2, Eye, Plus } from 'lucide-vue-next';
 import {
   Table,
@@ -43,7 +44,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { toast } from 'vue-sonner'
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 
 const props = defineProps<{
   patients?: any[];
@@ -63,7 +64,7 @@ const patientsList = props.patients || [];
 
 // Add Modal State
 const isAddDialogOpen = ref(false)
-const addForm = ref({
+const addForm = useForm({
   number: '',
   name: '',
   age: '',
@@ -75,7 +76,7 @@ const addForm = ref({
 // Edit Modal State
 const isEditDialogOpen = ref(false)
 const editingPatient = ref<any>(null)
-const editForm = ref({
+const editForm = useForm({
   id: '',
   number: '',
   name: '',
@@ -95,86 +96,76 @@ const deletingPatient = ref<any>(null)
 
 // Open Add Dialog
 const openAddDialog = () => {
-  addForm.value = {
-    number: '',
-    name: '',
-    age: '',
-    gender: '',
-    phone_number: '',
-    residence: '',
-  }
+  addForm.reset()
+  addForm.clearErrors()
   isAddDialogOpen.value = true
 }
 
 // Handle Add Submit
 const handleAddSubmit = () => {
-  const payload = {
-    number: addForm.value.number,
-    name: addForm.value.name,
-    age: parseInt(addForm.value.age),
-    gender: addForm.value.gender,
-    phone_number: addForm.value.phone_number,
-    residence: addForm.value.residence,
-  }
-
-  console.log('Add Patient Payload:', payload)
-
-  // Show success toast
-  toast.success('Patient Added', {
-    description: `${addForm.value.name} has been added successfully.`,
+  addForm.post(patients().url, {
+    preserveScroll: true,
+    onSuccess: () => {
+      toast.success('Patient Added', {
+        description: `${addForm.name} has been added successfully.`,
+      })
+      isAddDialogOpen.value = false
+      addForm.reset()
+    },
+    onError: (errors) => {
+      toast.error('Validation Error', {
+        description: 'Please check the form for errors.',
+      })
+    },
   })
-
-  // Close dialog
-  isAddDialogOpen.value = false
 }
 
 // Close Add Dialog
 const closeAddDialog = () => {
   isAddDialogOpen.value = false
+  addForm.reset()
+  addForm.clearErrors()
 }
 
 // Open Edit Dialog
 const openEditDialog = (patient: any) => {
   editingPatient.value = patient
-  editForm.value = {
-    id: patient.id,
-    number: patient.number,
-    name: patient.name,
-    age: patient.age.toString(),
-    gender: patient.gender,
-    phone_number: patient.phone_number,
-    residence: patient.residence,
-  }
+  editForm.id = patient.id
+  editForm.number = patient.number
+  editForm.name = patient.name
+  editForm.age = patient.age.toString()
+  editForm.gender = patient.gender
+  editForm.phone_number = patient.phone_number
+  editForm.residence = patient.residence
+  editForm.clearErrors()
   isEditDialogOpen.value = true
 }
 
 // Handle Edit Submit
 const handleEditSubmit = () => {
-  const payload = {
-    id: editForm.value.id,
-    number: editForm.value.number,
-    name: editForm.value.name,
-    age: parseInt(editForm.value.age),
-    gender: editForm.value.gender,
-    phone_number: editForm.value.phone_number,
-    residence: editForm.value.residence,
-  }
-
-  console.log('Edit Payload:', payload)
-
-  // Show success toast with Sonner
-  toast.success('Patient Updated', {
-    description: `${editForm.value.name}'s information has been updated successfully.`,
+  editForm.put(`/patients/${editForm.id}`, {
+    preserveScroll: true,
+    onSuccess: () => {
+      toast.success('Patient Updated', {
+        description: `${editForm.name}'s information has been updated successfully.`,
+      })
+      isEditDialogOpen.value = false
+      editingPatient.value = null
+    },
+    onError: (errors) => {
+      toast.error('Validation Error', {
+        description: 'Please check the form for errors.',
+      })
+    },
   })
-
-  // Close dialog after logging
-  isEditDialogOpen.value = false
 }
 
 // Close Edit Dialog
 const closeEditDialog = () => {
   isEditDialogOpen.value = false
   editingPatient.value = null
+  editForm.reset()
+  editForm.clearErrors()
 }
 
 // Open View Dialog
@@ -197,22 +188,23 @@ const openDeleteDialog = (patient: any) => {
 
 // Handle Delete Confirm
 const handleDeleteConfirm = () => {
-  const payload = {
-    id: deletingPatient.value.id,
-    number: deletingPatient.value.number,
-    name: deletingPatient.value.name,
-  }
+  if (!deletingPatient.value) return
 
-  console.log('Delete Payload:', payload)
-
-  // Show success toast
-  toast.success('Patient Deleted', {
-    description: `${deletingPatient.value.name} has been deleted successfully.`,
+  router.delete(`/patients/${deletingPatient.value.id}`, {
+    preserveScroll: true,
+    onSuccess: () => {
+      toast.success('Patient Deleted', {
+        description: `${deletingPatient.value.name} has been deleted successfully.`,
+      })
+      isDeleteDialogOpen.value = false
+      deletingPatient.value = null
+    },
+    onError: () => {
+      toast.error('Delete Failed', {
+        description: 'Unable to delete patient. Please try again.',
+      })
+    },
   })
-
-  // Close dialog
-  isDeleteDialogOpen.value = false
-  deletingPatient.value = null
 }
 
 // Close Delete Dialog

@@ -9,25 +9,22 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
 
-
 Route::get('/', function () {
     return redirect('/login');
 })->name('home');
 
-//Route::get('/patients', function () {
-//
-//})->middleware(['auth', 'verified'])->name('patients.index');
-
-
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // Patients Routes
     Route::get('/patients', [PatientsController::class, 'index'])->name('patients.index');
+    Route::post('/patients', [PatientsController::class, 'store'])->name('patients.store');
+    Route::put('/patients/{patient}', [PatientsController::class, 'update'])->name('patients.update');
+    Route::delete('/patients/{patient}', [PatientsController::class, 'destroy'])->name('patients.destroy');
+
     Route::get('/visits', [VisitController::class, 'index'])->name('visits.index');
     Route::get('/payments', [PaymentController::class, 'index'])->name('payments.index');
     Route::get('/balances', [BalanceController::class, 'index'])->name('balances.index');
 });
-
-
-
 
 require __DIR__.'/settings.php';

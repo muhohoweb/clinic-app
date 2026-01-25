@@ -13,8 +13,8 @@ class PatientsController extends Controller
      */
     public function index()
     {
-        return Inertia::render('patients/Index',[
-            'patients' => Patient::query()->get()->all()
+        return Inertia::render('patients/Index', [
+            'patients' => Patient::query()->latest()->get()->all()
         ]);
     }
 
@@ -31,7 +31,18 @@ class PatientsController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $validated = $request->validate([
+            'number' => 'required|string|max:255|unique:patients,number',
+            'name' => 'required|string|max:255',
+            'age' => 'required|integer|min:0|max:150',
+            'gender' => 'required|in:male,female',
+            'phone_number' => 'required|string|max:255',
+            'residence' => 'required|string|max:255',
+        ]);
+
+        Patient::create($validated);
+
+        return redirect()->route('patients.index');
     }
 
     /**
@@ -53,16 +64,29 @@ class PatientsController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, Patient $patient)
     {
-        //
+        $validated = $request->validate([
+            'number' => 'required|string|max:255|unique:patients,number,' . $patient->id,
+            'name' => 'required|string|max:255',
+            'age' => 'required|integer|min:0|max:150',
+            'gender' => 'required|in:male,female',
+            'phone_number' => 'required|string|max:255',
+            'residence' => 'required|string|max:255',
+        ]);
+
+        $patient->update($validated);
+
+        return redirect()->route('patients.index');
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Patient $patient)
     {
-        //
+        $patient->delete();
+
+        return redirect()->route('patients.index');
     }
 }
