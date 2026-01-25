@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
 import { dashboard } from '@/routes';
-import patients from '@/routes/patients';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { Edit, Trash2, Eye, Plus } from 'lucide-vue-next';
@@ -44,7 +43,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { toast } from 'vue-sonner'
-import { ref, watch } from 'vue'
+import { ref } from 'vue'
 
 const props = defineProps<{
   patients?: any[];
@@ -103,7 +102,7 @@ const openAddDialog = () => {
 
 // Handle Add Submit
 const handleAddSubmit = () => {
-  addForm.post(patients().url, {
+  addForm.post('/patients', {
     preserveScroll: true,
     onSuccess: () => {
       toast.success('Patient Added', {
@@ -113,6 +112,7 @@ const handleAddSubmit = () => {
       addForm.reset()
     },
     onError: (errors) => {
+      console.error('Validation errors:', errors)
       toast.error('Validation Error', {
         description: 'Please check the form for errors.',
       })
@@ -153,6 +153,7 @@ const handleEditSubmit = () => {
       editingPatient.value = null
     },
     onError: (errors) => {
+      console.error('Validation errors:', errors)
       toast.error('Validation Error', {
         description: 'Please check the form for errors.',
       })
