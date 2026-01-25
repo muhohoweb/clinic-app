@@ -4,6 +4,7 @@ import { dashboard } from '@/routes';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { Edit, Trash2, Eye, Plus, Search } from 'lucide-vue-next';
+
 import {
   Table,
   TableBody,
@@ -42,11 +43,15 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { toast } from 'vue-sonner'
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import axios from 'axios'
+import Pagination from '@/components/Pagination.vue'
 
 const props = defineProps<{
-  visits?: any[];
+  visits?: {
+    data: any[]
+    links: any[]
+  }
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -59,7 +64,11 @@ const breadcrumbs: BreadcrumbItem[] = [
   },
 ];
 
-const visitsList = props.visits || [];
+const allVisitsForHistory = computed(() => props.visits?.data || [])
+const paginationLinks = computed(() => props.visits?.links || [])
+
+// Get all visits for history (we need to fetch separately for patient history)
+// const allVisitsForHistory = ref<any[]>([])
 
 const formatDate = (date: string) => {
   return new Date(date).toLocaleDateString('en-KE', {
@@ -147,6 +156,19 @@ const searchPatient = async () => {
     })
   } finally {
     isSearching.value = false
+  }
+}
+
+// Fetch patient visit history
+const fetchPatientHistory = async (patientId: number) => {
+  try {
+    const response = await axios.get(`/visits`, {
+      params: { patient_id: patientId, all: true }
+    })
+    allVisitsForHistory.value = response.data || []
+  } catch (error) {
+    console.error('Error fetching patient history:', error)
+    allVisitsForHistory.value = []
   }
 }
 
@@ -252,15 +274,21 @@ const closeEditDialog = () => {
 }
 
 // Open View Dialog
-const openViewDialog = (visit: any) => {
+const openViewDialog = async (visit: any) => {
   viewingVisit.value = visit
   isViewDialogOpen.value = true
+
+  // Fetch all visits for this patient to show history
+  if (visit.patient_id) {
+    await fetchPatientHistory(visit.patient_id)
+  }
 }
 
 // Close View Dialog
 const closeViewDialog = () => {
   isViewDialogOpen.value = false
   viewingVisit.value = null
+  allVisitsForHistory.value = []
 }
 
 // Open Delete Dialog
@@ -305,19 +333,19 @@ const closeDeleteDialog = () => {
       <!-- Stats Cards -->
       <div class="grid auto-rows-min gap-4 md:grid-cols-3">
         <div class="relative overflow-hidden rounded-xl border border-gray-200 p-6 bg-white dark:border-gray-700 dark:bg-gray-800">
-          <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Visits</div>
-          <div class="text-2xl font-bold">{{ visitsList.length }}</div>
+          <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Visits (This Page)</div>
+          <div class="text-2xl font-bold">{{ allVisitsForHistory.length }}</div>
         </div>
         <div class="relative overflow-hidden rounded-xl border border-gray-200 p-6 bg-white dark:border-gray-700 dark:bg-gray-800">
           <div class="text-sm font-medium text-gray-500 dark:text-gray-400">This Month</div>
           <div class="text-2xl font-bold">
-            {{ visitsList.filter(v => new Date(v.created_at).getMonth() === new Date().getMonth()).length }}
+            {{ allVisitsForHistory.filter(v => new Date(v.created_at).getMonth() === new Date().getMonth()).length }}
           </div>
         </div>
         <div class="relative overflow-hidden rounded-xl border border-gray-200 p-6 bg-white dark:border-gray-700 dark:bg-gray-800">
           <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Today</div>
           <div class="text-2xl font-bold">
-            {{ visitsList.filter(v => new Date(v.created_at).toDateString() === new Date().toDateString()).length }}
+            {{ allVisitsForHistory.filter(v => new Date(v.created_at).toDateString() === new Date().toDateString()).length }}
           </div>
         </div>
       </div>
@@ -348,12 +376,12 @@ const closeDeleteDialog = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                <TableRow v-if="visitsList.length === 0">
+                <TableRow v-if="allVisitsForHistory.length === 0">
                   <TableCell colspan="7" class="text-center text-gray-500 dark:text-gray-400 h-24">
                     No visits found.
                   </TableCell>
                 </TableRow>
-                <TableRow v-for="(visit, index) in visitsList" :key="visit.id">
+                <TableRow v-for="(visit, index) in allVisitsForHistory" :key="visit.id">
                   <TableCell class="font-medium">
                     {{ index + 1 }}
                   </TableCell>
@@ -414,8 +442,11 @@ const closeDeleteDialog = () => {
             </Table>
           </div>
 
-          <div class="mt-4 text-sm text-gray-500 dark:text-gray-400">
-            Showing {{ visitsList.length }} visits
+          <div class="mt-4 flex items-center justify-between">
+            <div class="text-sm text-gray-500 dark:text-gray-400">
+              Showing {{ allVisitsForHistory.length }} visits on this page
+            </div>
+            <Pagination :links="paginationLinks" />
           </div>
         </div>
       </div>
@@ -884,20 +915,20 @@ const closeDeleteDialog = () => {
                 Previous Visits History
               </h4>
               <span class="text-xs text-gray-500 dark:text-gray-400">
-                {{ visitsList.filter(v => v.patient_id === viewingVisit.patient_id && v.id !== viewingVisit.id).length }} previous visit(s)
+                {{ allVisitsForHistory.filter(v => v.patient_id === viewingVisit.patient_id && v.id !== viewingVisit.id).length }} previous visit(s)
               </span>
             </div>
 
             <div class="max-h-[300px] space-y-3 overflow-y-auto rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-900">
               <div
-                  v-if="visitsList.filter(v => v.patient_id === viewingVisit.patient_id && v.id !== viewingVisit.id).length === 0"
+                  v-if="allVisitsForHistory.filter(v => v.patient_id === viewingVisit.patient_id && v.id !== viewingVisit.id).length === 0"
                   class="text-center py-8 text-sm text-gray-500 dark:text-gray-400"
               >
                 No previous visits recorded for this patient
               </div>
 
               <div
-                  v-for="visit in visitsList.filter(v => v.patient_id === viewingVisit.patient_id && v.id !== viewingVisit.id).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())"
+                  v-for="visit in allVisitsForHistory.filter(v => v.patient_id === viewingVisit.patient_id && v.id !== viewingVisit.id).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())"
                   :key="visit.id"
                   class="rounded-md border border-gray-200 bg-white p-3 dark:border-gray-600 dark:bg-gray-800"
               >

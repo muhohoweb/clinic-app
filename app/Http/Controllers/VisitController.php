@@ -14,8 +14,38 @@ class VisitController extends Controller
      */
     public function index()
     {
+        $visits = Visit::with('patient')
+            ->latest()
+            ->paginate(10)
+            ->through(function ($visit) {
+                return [
+                    'id' => $visit->id,
+                    'patient_id' => $visit->patient_id,
+                    'complaints' => $visit->complaints,
+                    'history_of_presenting_illness' => $visit->history_of_presenting_illness,
+                    'allergies' => $visit->allergies,
+                    'physical_examination' => $visit->physical_examination,
+                    'lab_test' => $visit->lab_test,
+                    'imaging' => $visit->imaging,
+                    'diagnosis' => $visit->diagnosis,
+                    'type_of_diagnosis' => $visit->type_of_diagnosis,
+                    'prescriptions' => $visit->prescriptions,
+                    'created_at' => $visit->created_at,
+                    'updated_at' => $visit->updated_at,
+                    'patient' => $visit->patient ? [
+                        'id' => $visit->patient->id,
+                        'number' => $visit->patient->number,
+                        'name' => $visit->patient->name,
+                        'age' => $visit->patient->age,
+                        'gender' => $visit->patient->gender,
+                        'phone_number' => $visit->patient->phone_number,
+                        'residence' => $visit->patient->residence,
+                    ] : null,
+                ];
+            });
+
         return Inertia::render('visits/Index', [
-            'visits' => Visit::with('patient')->latest()->get()->all()
+            'visits' => $visits
         ]);
     }
 
