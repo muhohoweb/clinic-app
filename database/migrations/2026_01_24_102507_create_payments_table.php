@@ -6,21 +6,29 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Run the migrations.
+     */
     public function up(): void
     {
         Schema::create('payments', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('visit_id');
             $table->foreign('visit_id')->references('id')->on('visits')->onDelete('cascade');
-            $table->decimal('amount', 10, 2); // Single amount field is cleaner
-            $table->enum('payment_method', ['cash', 'mpesa', 'bank_transfer', 'insurance']);
-            $table->string('reference_number')->nullable(); // For mpesa/bank transactions
-            $table->enum('status', ['paid', 'partial', 'pending'])->default('paid');
-            $table->text('notes')->nullable(); // For any additional info
+            $table->decimal('amount_charged', 10, 2);
+            $table->decimal('amount_paid', 10, 2);
+            $table->decimal('balance', 10, 2);
+            $table->enum('mode_of_payment', ['cash', 'mpesa', 'bank_transfer', 'insurance']);
+            $table->string('mpesa_transaction_id')->nullable();
+            $table->string('mpesa_phone_number')->nullable();
+            $table->text('notes')->nullable();
             $table->timestamps();
         });
     }
 
+    /**
+     * Reverse the migrations.
+     */
     public function down(): void
     {
         Schema::dropIfExists('payments');
