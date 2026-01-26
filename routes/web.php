@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\BalanceController;
+use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PatientsController;
 use App\Http\Controllers\PaymentController;
@@ -36,7 +36,7 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/payments/{payment}', [PaymentController::class, 'destroy'])->name('payments.destroy');
     Route::post('/payments/mpesa-stk-push', [PaymentController::class, 'mpesaStkPush'])->name('payments.mpesa-stk-push');
     Route::get('/payments/search-visit', [PaymentController::class, 'searchVisit'])->name('payments.search-visit');
-    Route::get('/balances', [BalanceController::class, 'index'])->name('balances.index');
+    Route::get('/reports', [ReportsController::class, 'index'])->name('reports.index');
 });
 
 require __DIR__.'/settings.php';

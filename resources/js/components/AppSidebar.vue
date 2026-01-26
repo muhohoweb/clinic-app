@@ -15,7 +15,7 @@ import {dashboard} from '@/routes';
 import patients from '@/routes/patients';
 import payments from '@/routes/payments';
 import visits from '@/routes/visits';
-import balances from '@/routes/balances';
+import reports from '@/routes/reports';
 import {type NavItem} from '@/types';
 import {Link} from '@inertiajs/vue3';
 import {BookOpen, Folder, Handshake, LayoutGrid, User2Icon, UsersIcon} from 'lucide-vue-next';
@@ -43,8 +43,8 @@ const mainNavItems: NavItem[] = [
     icon: LayoutGrid,
   },
   {
-    title: 'Balances',
-    href: balances.index(),
+    title: 'Reports',
+    href: reports.index(),
     icon: Handshake,
   },
 ];
