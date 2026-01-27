@@ -37,7 +37,7 @@ import { toast } from 'vue-sonner';
 
 const breadcrumbs: BreadcrumbItem[] = [
   {
-    title: 'Dashboard',
+    title: 'Report',
     href: dashboard().url,
   },
 ];
