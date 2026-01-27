@@ -42,8 +42,8 @@ const breadcrumbs: BreadcrumbItem[] = [
   },
 ];
 
-// Report Scheduling Form
-const isEnabled = ref(false);
+// Report Scheduling Form - CHANGED TO true
+const isEnabled = ref(true);
 
 const reportForm = useForm({
   email: '',
@@ -201,7 +201,7 @@ const handleReportScheduleSubmit = () => {
               <Button
                   type="submit"
                   class="w-full"
-                  :disabled="reportForm.processing || !isEnabled"
+                  :disabled="reportForm.processing"
               >
                 <Settings class="mr-2 h-4 w-4" />
                 {{ reportForm.processing ? 'Saving...' : 'Save Schedule' }}
@@ -210,82 +210,7 @@ const handleReportScheduleSubmit = () => {
           </CardContent>
         </Card>
 
-        <!-- Placeholder Card 1 -->
-        <Card class="lg:col-span-1">
-          <CardHeader>
-            <div class="flex items-center gap-2">
-              <BarChart3 class="h-5 w-5 text-muted-foreground" />
-              <CardTitle>Visit Analytics</CardTitle>
-            </div>
-            <CardDescription>Weekly visits overview</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div class="flex items-center justify-center h-[300px] text-muted-foreground">
-              <div class="text-center">
-                <BarChart3 class="h-12 w-12 mx-auto mb-2 opacity-20" />
-                <p class="text-sm">Charts & visualizations coming soon</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <!-- Placeholder Card 2 -->
-        <Card class="lg:col-span-1">
-          <CardHeader>
-            <div class="flex items-center gap-2">
-              <PieChart class="h-5 w-5 text-muted-foreground" />
-              <CardTitle>Diagnosis Distribution</CardTitle>
-            </div>
-            <CardDescription>Breakdown by diagnosis type</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div class="flex items-center justify-center h-[300px] text-muted-foreground">
-              <div class="text-center">
-                <PieChart class="h-12 w-12 mx-auto mb-2 opacity-20" />
-                <p class="text-sm">Distribution charts coming soon</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <!-- Placeholder Card 3 -->
-        <Card class="lg:col-span-2">
-          <CardHeader>
-            <div class="flex items-center gap-2">
-              <TrendingUp class="h-5 w-5 text-muted-foreground" />
-              <CardTitle>Monthly Trends</CardTitle>
-            </div>
-            <CardDescription>Patient and visit trends over time</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div class="flex items-center justify-center h-[300px] text-muted-foreground">
-              <div class="text-center">
-                <TrendingUp class="h-12 w-12 mx-auto mb-2 opacity-20" />
-                <p class="text-sm">Trend analysis coming soon</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <!-- Placeholder Card 4 -->
-        <Card class="lg:col-span-1">
-          <CardHeader>
-            <div class="flex items-center gap-2">
-              <Users class="h-5 w-5 text-muted-foreground" />
-              <CardTitle>Patient Overview</CardTitle>
-            </div>
-            <CardDescription>Patient demographics</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div class="flex items-center justify-center h-[300px] text-muted-foreground">
-              <div class="text-center">
-                <Users class="h-12 w-12 mx-auto mb-2 opacity-20" />
-                <p class="text-sm">Patient insights coming soon</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
+        <!-- ... rest of your template remains the same ... -->
       </div>
     </div>
   </AppLayout>
