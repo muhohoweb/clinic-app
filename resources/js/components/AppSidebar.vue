@@ -18,7 +18,7 @@ import visits from '@/routes/visits';
 import reports from '@/routes/reports';
 import {type NavItem} from '@/types';
 import {Link} from '@inertiajs/vue3';
-import {BookOpen, Folder, Handshake, LayoutGrid, User2Icon, UsersIcon} from 'lucide-vue-next';
+import {BookOpen, Clock, Clock1Icon, Folder, Handshake, LayoutGrid, User2Icon, UsersIcon} from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
 
 const mainNavItems: NavItem[] = [
@@ -45,7 +45,7 @@ const mainNavItems: NavItem[] = [
   {
     title: 'Reports',
     href: reports.index(),
-    icon: Handshake,
+    icon: Clock,
   },
 ];
 
