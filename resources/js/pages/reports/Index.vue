@@ -53,12 +53,28 @@ const reportForm = useForm({
   includeCharts: true,
 });
 
+const handlePromiseClick = ()=> {
+  toast.promise<{ name: string }>(
+      () =>
+          new Promise(resolve =>
+              setTimeout(() => resolve({ name: 'Event' }), 200),
+          ),
+      {
+        loading: 'Loading...',
+        success: (data: { name: string }) => `${data.name} has been created`,
+        error: 'Error',
+      },
+  )
+}
 const handleReportScheduleSubmit = () => {
+
+
   // Add the enabled state to the form data when submitting
   const formData = {
     enabled: isEnabled.value,
     ...reportForm.data()
   };
+
 
   reportForm.transform(() => formData).post('/dashboard/schedule-reports', {
     preserveScroll: true,
@@ -105,7 +121,7 @@ const handleReportScheduleSubmit = () => {
             </CardDescription>
           </CardHeader>
           <CardContent class="space-y-4">
-            <form @submit.prevent="handleReportScheduleSubmit" class="space-y-4">
+            <form @submit.prevent="handlePromiseClick" class="space-y-4">
               <!-- Enable/Disable Toggle -->
               <div class="flex items-center justify-between space-x-2 rounded-lg border p-4 dark:border-gray-700">
                 <div class="flex-1 space-y-0.5">
