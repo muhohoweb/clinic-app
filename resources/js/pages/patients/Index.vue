@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
-import { dashboard } from '@/routes';
-import { type BreadcrumbItem } from '@/types';
-import { Head, router, useForm } from '@inertiajs/vue3';
-import { Edit, Trash2, Eye, Plus } from 'lucide-vue-next';
+import {dashboard} from '@/routes';
+import {type BreadcrumbItem} from '@/types';
+import {Head, router, useForm} from '@inertiajs/vue3';
+import {Edit, Trash2, Eye, Plus} from 'lucide-vue-next';
 import {
   Table,
   TableBody,
@@ -32,9 +32,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import {Button} from '@/components/ui/button'
+import {Input} from '@/components/ui/input'
+import {Label} from '@/components/ui/label'
 import {
   Select,
   SelectContent,
@@ -42,11 +42,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { toast } from 'vue-sonner'
-import { ref } from 'vue'
+import {toast} from 'vue-sonner'
+import { ref, computed } from 'vue'
+import Pagination from '@/components/Pagination.vue'
 
 const props = defineProps<{
-  patients?: any[];
+  patients?: {
+    data: any[]
+    links: any[]
+  }
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -59,7 +63,8 @@ const breadcrumbs: BreadcrumbItem[] = [
   },
 ];
 
-const patientsList = props.patients || [];
+const patientsList = computed(() => props.patients?.data || [])
+const paginationLinks = computed(() => props.patients?.links || [])
 
 // Add Modal State
 const isAddDialogOpen = ref(false)
@@ -216,33 +221,37 @@ const closeDeleteDialog = () => {
 </script>
 
 <template>
-  <Head title="Patients" />
+  <Head title="Patients"/>
 
   <AppLayout :breadcrumbs="breadcrumbs">
     <div class="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
       <!-- Stats Cards -->
       <div class="grid auto-rows-min gap-4 md:grid-cols-3">
-        <div class="relative overflow-hidden rounded-xl border border-gray-200 p-6 bg-white dark:border-gray-700 dark:bg-gray-800">
+        <div
+            class="relative overflow-hidden rounded-xl border border-gray-200 p-6 bg-white dark:border-gray-700 dark:bg-gray-800">
           <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Patients</div>
           <div class="text-2xl font-bold">{{ patientsList.length }}</div>
         </div>
-        <div class="relative overflow-hidden rounded-xl border border-gray-200 p-6 bg-white dark:border-gray-700 dark:bg-gray-800">
+        <div
+            class="relative overflow-hidden rounded-xl border border-gray-200 p-6 bg-white dark:border-gray-700 dark:bg-gray-800">
           <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Male Patients</div>
           <div class="text-2xl font-bold">{{ patientsList.filter(p => p.gender === 'male').length }}</div>
         </div>
-        <div class="relative overflow-hidden rounded-xl border border-gray-200 p-6 bg-white dark:border-gray-700 dark:bg-gray-800">
+        <div
+            class="relative overflow-hidden rounded-xl border border-gray-200 p-6 bg-white dark:border-gray-700 dark:bg-gray-800">
           <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Female Patients</div>
           <div class="text-2xl font-bold">{{ patientsList.filter(p => p.gender === 'female').length }}</div>
         </div>
       </div>
 
       <!-- Patients Table -->
-      <div class="relative min-h-[100vh] flex-1 rounded-xl border border-gray-200 bg-white md:min-h-min dark:border-gray-700 dark:bg-gray-800">
+      <div
+          class="relative min-h-[100vh] flex-1 rounded-xl border border-gray-200 bg-white md:min-h-min dark:border-gray-700 dark:bg-gray-800">
         <div class="p-6">
           <div class="mb-4 flex items-center justify-between">
             <h2 class="text-xl font-semibold">Patients List</h2>
             <Button @click="openAddDialog">
-              <Plus class="mr-2 h-4 w-4" />
+              <Plus class="mr-2 h-4 w-4"/>
               Add Patient
             </Button>
           </div>
@@ -304,21 +313,21 @@ const closeDeleteDialog = () => {
                           @click="openViewDialog(patient)"
                           class="inline-flex items-center gap-1 rounded-md bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
                       >
-                        <Eye class="h-4 w-4" />
+                        <Eye class="h-4 w-4"/>
                         View
                       </button>
                       <button
                           @click="openEditDialog(patient)"
                           class="inline-flex items-center gap-1 rounded-md bg-blue-100 px-3 py-1.5 text-sm font-medium text-blue-700 hover:bg-blue-200 dark:bg-blue-900 dark:text-blue-200 dark:hover:bg-blue-800"
                       >
-                        <Edit class="h-4 w-4" />
+                        <Edit class="h-4 w-4"/>
                         Edit
                       </button>
                       <button
                           @click="openDeleteDialog(patient)"
                           class="inline-flex items-center gap-1 rounded-md bg-red-100 px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-200 dark:bg-red-900 dark:text-red-200 dark:hover:bg-red-800"
                       >
-                        <Trash2 class="h-4 w-4" />
+                        <Trash2 class="h-4 w-4"/>
                         Delete
                       </button>
                     </div>
@@ -328,8 +337,11 @@ const closeDeleteDialog = () => {
             </Table>
           </div>
 
-          <div class="mt-4 text-sm text-gray-500 dark:text-gray-400">
-            Showing {{ patientsList.length }} patients
+          <div class="mt-4 flex items-center justify-between">
+            <div class="text-sm text-gray-500 dark:text-gray-400">
+              Showing {{ patientsList.length }} patients on this page
+            </div>
+            <Pagination :links="paginationLinks" />
           </div>
         </div>
       </div>
@@ -387,7 +399,7 @@ const closeDeleteDialog = () => {
                 <Label for="add-gender">Gender</Label>
                 <Select v-model="addForm.gender" required>
                   <SelectTrigger id="add-gender">
-                    <SelectValue placeholder="Select gender" />
+                    <SelectValue placeholder="Select gender"/>
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="male">Male</SelectItem>
@@ -485,7 +497,7 @@ const closeDeleteDialog = () => {
                 <Label for="edit-gender">Gender</Label>
                 <Select v-model="editForm.gender" required>
                   <SelectTrigger id="edit-gender">
-                    <SelectValue placeholder="Select gender" />
+                    <SelectValue placeholder="Select gender"/>
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="male">Male</SelectItem>

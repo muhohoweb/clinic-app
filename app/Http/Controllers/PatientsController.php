@@ -14,7 +14,7 @@ class PatientsController extends Controller
     public function index()
     {
         return Inertia::render('patients/Index', [
-            'patients' => Patient::query()->latest()->get()->all()
+            'patients' => Patient::query()->latest()->paginate(10)
         ]);
     }
 
