@@ -8,6 +8,7 @@ use App\Http\Controllers\VisitController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
+use App\Http\Controllers\ScheduledReportController;
 
 Route::get('/', function () {
     return redirect('/login');
@@ -37,6 +38,10 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/payments/mpesa-stk-push', [PaymentController::class, 'mpesaStkPush'])->name('payments.mpesa-stk-push');
     Route::get('/payments/search-visit', [PaymentController::class, 'searchVisit'])->name('payments.search-visit');
     Route::get('/reports', [ReportsController::class, 'index'])->name('reports.index');
+
+
+
+
 });
 
 require __DIR__.'/settings.php';
