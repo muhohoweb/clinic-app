@@ -12,15 +12,15 @@ class TriggerScheduledReports extends Command
     protected $signature = 'reports:trigger';
     protected $description = 'Trigger scheduled reports execution';
 
-    public function handle()
+    public function handle():int
     {
-        Log::info('=== Starting scheduled reports execution ===');
+//        Log::info('=== Starting scheduled reports execution ===');
         $this->info('Starting scheduled reports execution...');
 
-        $reports = ScheduledReport::where('is_enabled', true)->get();
+        $reports = ScheduledReport::query()->where('is_enabled', true)->get();
 
         if ($reports->isEmpty()) {
-            Log::warning('No active scheduled reports found.');
+//            Log::warning('No active scheduled reports found.');
             $this->warn('No active scheduled reports found.');
             return 0;
         }
@@ -35,13 +35,13 @@ class TriggerScheduledReports extends Command
                 $report->update(['last_run_at' => Carbon::now()]);
 
                 $message = "✓ Processed: {$report->email} | Frequency: {$report->frequency} | Time: " . Carbon::now()->format('Y-m-d H:i:s');
-                Log::info($message);
+//                Log::info($message);
                 $this->info($message);
 
                 $processed++;
             } else {
                 $message = "⊘ Skipped: {$report->email} | Frequency: {$report->frequency} | Not due yet";
-                Log::info($message);
+//                Log::info($message);
                 $this->comment($message);
 
                 $skipped++;
@@ -49,8 +49,8 @@ class TriggerScheduledReports extends Command
         }
 
         $summary = "Summary: {$processed} processed, {$skipped} skipped.";
-        Log::info($summary);
-        Log::info('=== Finished scheduled reports execution ===');
+//        Log::info($summary);
+//        Log::info('=== Finished scheduled reports execution ===');
 
         $this->info("---");
         $this->info($summary);
