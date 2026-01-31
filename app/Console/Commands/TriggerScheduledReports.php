@@ -9,27 +9,18 @@ use Illuminate\Support\Facades\Log;
 
 class TriggerScheduledReports extends Command
 {
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
     protected $signature = 'reports:trigger';
-
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
     protected $description = 'Trigger scheduled reports execution';
 
-    public function handle(): int
+    public function handle()
     {
+        Log::info('=== Starting scheduled reports execution ===');
         $this->info('Starting scheduled reports execution...');
 
         $reports = ScheduledReport::where('is_enabled', true)->get();
 
         if ($reports->isEmpty()) {
+            Log::warning('No active scheduled reports found.');
             $this->warn('No active scheduled reports found.');
             return 0;
         }
@@ -42,27 +33,36 @@ class TriggerScheduledReports extends Command
 
             if ($shouldRun) {
                 $report->update(['last_run_at' => Carbon::now()]);
-                $this->info("✓ Processed: {$report->email} | Frequency: {$report->frequency} | Time: " . Carbon::now()->format('Y-m-d H:i:s'));
+
+                $message = "✓ Processed: {$report->email} | Frequency: {$report->frequency} | Time: " . Carbon::now()->format('Y-m-d H:i:s');
+                Log::info($message);
+                $this->info($message);
+
                 $processed++;
             } else {
-                $this->comment("⊘ Skipped: {$report->email} | Frequency: {$report->frequency} | Not due yet");
+                $message = "⊘ Skipped: {$report->email} | Frequency: {$report->frequency} | Not due yet";
+                Log::info($message);
+                $this->comment($message);
+
                 $skipped++;
             }
         }
 
+        $summary = "Summary: {$processed} processed, {$skipped} skipped.";
+        Log::info($summary);
+        Log::info('=== Finished scheduled reports execution ===');
+
         $this->info("---");
-        $this->info("Summary: {$processed} processed, {$skipped} skipped.");
+        $this->info($summary);
         return 0;
     }
 
-    /**
-     * Check if report should run based on frequency
-     */
     private function shouldRunReport(ScheduledReport $report): bool
     {
-        // If never run before, run it
         if (!$report->last_run_at) {
-            $this->line("  → First run for {$report->email}");
+            $message = "First run for {$report->email}";
+            Log::info("  → {$message}");
+            $this->line("  → {$message}");
             return true;
         }
 
@@ -72,31 +72,43 @@ class TriggerScheduledReports extends Command
         switch ($report->frequency) {
             case 'daily':
                 $shouldRun = $lastRun->diffInDays($now) >= 1;
-                $this->line("  → Daily check: Last run {$lastRun->diffForHumans()}");
+                $message = "Daily check for {$report->email}: Last run {$lastRun->diffForHumans()}";
+                Log::info("  → {$message}");
+                $this->line("  → {$message}");
                 return $shouldRun;
 
             case 'weekly':
                 $shouldRun = $lastRun->diffInWeeks($now) >= 1;
-                $this->line("  → Weekly check: Last run {$lastRun->diffForHumans()}");
+                $message = "Weekly check for {$report->email}: Last run {$lastRun->diffForHumans()}";
+                Log::info("  → {$message}");
+                $this->line("  → {$message}");
                 return $shouldRun;
 
             case 'bi-weekly':
                 $shouldRun = $lastRun->diffInWeeks($now) >= 2;
-                $this->line("  → Bi-weekly check: Last run {$lastRun->diffForHumans()}");
+                $message = "Bi-weekly check for {$report->email}: Last run {$lastRun->diffForHumans()}";
+                Log::info("  → {$message}");
+                $this->line("  → {$message}");
                 return $shouldRun;
 
             case 'monthly':
                 $shouldRun = $lastRun->diffInMonths($now) >= 1;
-                $this->line("  → Monthly check: Last run {$lastRun->diffForHumans()}");
+                $message = "Monthly check for {$report->email}: Last run {$lastRun->diffForHumans()}";
+                Log::info("  → {$message}");
+                $this->line("  → {$message}");
                 return $shouldRun;
 
             case 'quarterly':
                 $shouldRun = $lastRun->diffInMonths($now) >= 3;
-                $this->line("  → Quarterly check: Last run {$lastRun->diffForHumans()}");
+                $message = "Quarterly check for {$report->email}: Last run {$lastRun->diffForHumans()}";
+                Log::info("  → {$message}");
+                $this->line("  → {$message}");
                 return $shouldRun;
 
             default:
-                $this->error("  → Unknown frequency: {$report->frequency}");
+                $message = "Unknown frequency: {$report->frequency} for {$report->email}";
+                Log::error("  → {$message}");
+                $this->error("  → {$message}");
                 return false;
         }
     }
