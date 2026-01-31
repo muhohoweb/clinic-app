@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\ScheduledReport;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Log;
 
 class TriggerScheduledReports extends Command
 {
@@ -40,6 +41,7 @@ class TriggerScheduledReports extends Command
             $report->update(['last_run_at' => Carbon::now()]);
 
             $this->info("✓ Processed: {$report->email} ({$report->frequency})");
+            Log::info("Hello");
         }
 
         $this->info("Successfully processed {$reports->count()} report(s).");
