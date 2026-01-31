@@ -8,5 +8,4 @@ Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
-Route::post('/scheduled-reports', [ScheduledReportController::class, 'store']);
-Route::get('/cron/trigger', [ScheduledReportController::class, 'trigger']);
+

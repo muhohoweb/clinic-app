@@ -41,7 +41,8 @@ Route::middleware(['auth'])->group(function () {
 
 
 
-
+    Route::post('/scheduled-reports', [ScheduledReportController::class, 'store']);
+    Route::get('/cron/trigger', [ScheduledReportController::class, 'trigger']);
 });
 
 require __DIR__.'/settings.php';

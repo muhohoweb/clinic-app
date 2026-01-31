@@ -4,6 +4,7 @@ import { dashboard } from '@/routes';
 import { type BreadcrumbItem } from '@/types';
 import { Head, useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
+import axios from 'axios';
 import {
   Bell,
   Mail,
@@ -42,53 +43,52 @@ const breadcrumbs: BreadcrumbItem[] = [
   },
 ];
 
-// Report Scheduling Form - CHANGED TO true
+// Report Scheduling Form
 const isEnabled = ref(true);
+const isSubmitting = ref(false);
 
 const reportForm = useForm({
   email: '',
   frequency: 'daily',
+  scheduled_time: '08:00',
   includePatientStats: true,
   includeVisitStats: true,
   includeCharts: true,
 });
 
-const handlePromiseClick = ()=> {
-  toast.promise<{ name: string }>(
-      () =>
-          new Promise(resolve =>
-              setTimeout(() => resolve({ name: 'Event' }), 200),
-          ),
-      {
-        loading: 'Loading...',
-        success: (data: { name: string }) => `${data.name} has been created`,
-        error: 'Error',
-      },
-  )
-}
-const handleReportScheduleSubmit = () => {
+const handleReportScheduleSubmit = async () => {
+  if (!reportForm.email) {
+    toast.error('Error', {
+      description: 'Please enter an email address.',
+    });
+    return;
+  }
 
+  isSubmitting.value = true;
 
-  // Add the enabled state to the form data when submitting
-  const formData = {
-    enabled: isEnabled.value,
-    ...reportForm.data()
-  };
+  try {
+    const response = await axios.post('/scheduled-reports', {
+      email: reportForm.email,
+      frequency: reportForm.frequency,
+      scheduled_time: reportForm.scheduled_time,
+      is_enabled: isEnabled.value,
+    });
 
-
-  reportForm.transform(() => formData).post('/dashboard/schedule-reports', {
-    preserveScroll: true,
-    onSuccess: () => {
+    if (response.data.success) {
       toast.success('Report Schedule Updated', {
         description: 'Your automated report settings have been saved successfully.',
       });
-    },
-    onError: (errors) => {
-      toast.error('Error', {
-        description: 'Failed to update report schedule. Please check your inputs.',
-      });
-    },
-  });
+
+      console.log('Saved schedule:', response.data.data);
+    }
+  } catch (error) {
+    console.error('Error saving schedule:', error);
+    toast.error('Error', {
+      description: error.response?.data?.message || 'Failed to update report schedule. Please try again.',
+    });
+  } finally {
+    isSubmitting.value = false;
+  }
 };
 </script>
 
@@ -121,7 +121,7 @@ const handleReportScheduleSubmit = () => {
             </CardDescription>
           </CardHeader>
           <CardContent class="space-y-4">
-            <form @submit.prevent="handlePromiseClick" class="space-y-4">
+            <form @submit.prevent="handleReportScheduleSubmit" class="space-y-4">
               <!-- Enable/Disable Toggle -->
               <div class="flex items-center justify-between space-x-2 rounded-lg border p-4 dark:border-gray-700">
                 <div class="flex-1 space-y-0.5">
@@ -217,10 +217,10 @@ const handleReportScheduleSubmit = () => {
               <Button
                   type="submit"
                   class="w-full"
-                  :disabled="reportForm.processing"
+                  :disabled="isSubmitting || !isEnabled"
               >
                 <Settings class="mr-2 h-4 w-4" />
-                {{ reportForm.processing ? 'Saving...' : 'Save Schedule' }}
+                {{ isSubmitting ? 'Saving...' : 'Save Schedule' }}
               </Button>
             </form>
           </CardContent>
