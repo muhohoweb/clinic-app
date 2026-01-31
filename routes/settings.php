@@ -33,7 +33,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // M-Pesa Settings Routes
     Route::get('settings/mpesa', function () {
         return Inertia::render('settings/MpesaSettings');
-    })->name('mpesa.settings');
+    })->name('mpesa.settings')->middleware(['password.confirm']);
 
     // M-Pesa API Routes
     Route::get('mpesa-settings', [MpesaSettingController::class, 'index']);
