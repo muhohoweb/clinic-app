@@ -10,13 +10,13 @@ return new class extends Migration
     {
         Schema::create('mpesa_settings', function (Blueprint $table) {
             $table->id();
-            $table->string('consumer_key')->nullable();
-            $table->string('consumer_secret')->nullable();
+            $table->text('consumer_key')->nullable();
+            $table->text('consumer_secret')->nullable();
             $table->string('shortcode')->nullable();
-            $table->string('passkey')->nullable();
+            $table->text('passkey')->nullable();
             $table->string('base_url')->default('https://api.safaricom.co.ke');
             $table->string('callback_url')->nullable();
-            $table->string('environment')->default('sandbox'); // sandbox or production
+            $table->string('environment')->default('production');
             $table->boolean('is_active')->default(true);
             $table->timestamps();
         });

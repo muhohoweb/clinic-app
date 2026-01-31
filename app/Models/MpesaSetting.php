@@ -22,11 +22,9 @@ class MpesaSetting extends Model
 
     protected $casts = [
         'is_active' => 'boolean',
-    ];
-
-    protected $hidden = [
-        'consumer_secret',
-        'passkey',
+        'consumer_key' => 'encrypted',
+        'consumer_secret' => 'encrypted',
+        'passkey' => 'encrypted',
     ];
 
     /**
