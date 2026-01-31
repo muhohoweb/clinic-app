@@ -3,16 +3,19 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import { dashboard } from '@/routes';
 import { type BreadcrumbItem } from '@/types';
 import { Head, useForm } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import axios from 'axios';
 import {
   Bell,
   Mail,
   Settings,
-  BarChart3,
-  PieChart,
-  TrendingUp,
-  Users
+  Trash2,
+  Edit,
+  Plus,
+  Clock,
+  CheckCircle2,
+  XCircle,
+  Calendar,
 } from 'lucide-vue-next';
 
 import {
@@ -34,6 +37,7 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
 import { toast } from 'vue-sonner';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -43,9 +47,13 @@ const breadcrumbs: BreadcrumbItem[] = [
   },
 ];
 
-// Report Scheduling Form
+// State
 const isEnabled = ref(true);
 const isSubmitting = ref(false);
+const isEditMode = ref(false);
+const editingScheduleId = ref(null);
+const schedules = ref([]);
+const isLoadingSchedules = ref(false);
 
 const reportForm = useForm({
   email: '',
@@ -56,9 +64,55 @@ const reportForm = useForm({
   includeCharts: true,
 });
 
+// Fetch all schedules
+const fetchSchedules = async () => {
+  isLoadingSchedules.value = true;
+  try {
+    const response = await axios.get('/scheduled-reports');
+    if (response.data.success) {
+      schedules.value = response.data.data;
+    }
+  } catch (error) {
+    console.error('Error fetching schedules:', error);
+    toast.error('Error', {
+      description: 'Failed to load schedules.',
+    });
+  } finally {
+    isLoadingSchedules.value = false;
+  }
+};
+
+// Load schedule for editing
+const editSchedule = (schedule) => {
+  isEditMode.value = true;
+  editingScheduleId.value = schedule.id;
+  reportForm.email = schedule.email;
+  reportForm.frequency = schedule.frequency;
+  reportForm.scheduled_time = schedule.scheduled_time;
+  isEnabled.value = schedule.is_enabled;
+
+  toast.info('Edit Mode', {
+    description: `Editing schedule for ${schedule.email}`,
+  });
+
+  // Scroll to form
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+// Reset form
+const resetForm = () => {
+  isEditMode.value = false;
+  editingScheduleId.value = null;
+  reportForm.email = '';
+  reportForm.frequency = 'daily';
+  reportForm.scheduled_time = '08:00';
+  isEnabled.value = true;
+};
+
+// Submit form (create or update)
 const handleReportScheduleSubmit = async () => {
   if (!reportForm.email) {
-    toast.error('Error', {
+    toast.error('Validation Error', {
       description: 'Please enter an email address.',
     });
     return;
@@ -67,29 +121,124 @@ const handleReportScheduleSubmit = async () => {
   isSubmitting.value = true;
 
   try {
-    const response = await axios.post('/scheduled-reports', {
-      email: reportForm.email,
-      frequency: reportForm.frequency,
-      scheduled_time: reportForm.scheduled_time,
-      is_enabled: isEnabled.value,
-    });
+    let response;
+
+    if (isEditMode.value && editingScheduleId.value) {
+      // Update existing schedule
+      response = await axios.put(`/scheduled-reports/${editingScheduleId.value}`, {
+        email: reportForm.email,
+        frequency: reportForm.frequency,
+        scheduled_time: reportForm.scheduled_time,
+        is_enabled: isEnabled.value,
+      });
+    } else {
+      // Create new schedule
+      response = await axios.post('/scheduled-reports', {
+        email: reportForm.email,
+        frequency: reportForm.frequency,
+        scheduled_time: reportForm.scheduled_time,
+        is_enabled: isEnabled.value,
+      });
+    }
 
     if (response.data.success) {
-      toast.success('Report Schedule Updated', {
-        description: 'Your automated report settings have been saved successfully.',
+      toast.success(response.data.message, {
+        description: isEditMode.value
+            ? 'The schedule has been updated successfully.'
+            : 'A new schedule has been created successfully.',
+        action: {
+          label: 'View',
+          onClick: () => fetchSchedules(),
+        },
       });
 
-      console.log('Saved schedule:', response.data.data);
+      resetForm();
+      await fetchSchedules();
     }
   } catch (error) {
     console.error('Error saving schedule:', error);
-    toast.error('Error', {
-      description: error.response?.data?.message || 'Failed to update report schedule. Please try again.',
-    });
+
+    if (error.response?.data?.errors) {
+      const errors = Object.values(error.response.data.errors).flat();
+      toast.error('Validation Error', {
+        description: errors.join(', '),
+      });
+    } else {
+      toast.error('Error', {
+        description: error.response?.data?.message || 'Failed to save schedule. Please try again.',
+      });
+    }
   } finally {
     isSubmitting.value = false;
   }
 };
+
+// Delete schedule
+const deleteSchedule = async (id, email) => {
+  toast.promise(
+      axios.delete(`/scheduled-reports/${id}`),
+      {
+        loading: 'Deleting schedule...',
+        success: (response) => {
+          fetchSchedules();
+          if (editingScheduleId.value === id) {
+            resetForm();
+          }
+          return `Schedule for ${email} has been deleted`;
+        },
+        error: 'Failed to delete schedule',
+      }
+  );
+};
+
+// Toggle schedule status
+const toggleScheduleStatus = async (schedule) => {
+  try {
+    const response = await axios.post(`/scheduled-reports/${schedule.id}/toggle`);
+
+    if (response.data.success) {
+      toast.success(response.data.message, {
+        description: `Schedule for ${schedule.email} is now ${response.data.data.is_enabled ? 'enabled' : 'disabled'}.`,
+      });
+
+      await fetchSchedules();
+    }
+  } catch (error) {
+    console.error('Error toggling status:', error);
+    toast.error('Error', {
+      description: 'Failed to toggle schedule status.',
+    });
+  }
+};
+
+// Get frequency label
+const getFrequencyLabel = (frequency) => {
+  const labels = {
+    'daily': 'Daily',
+    'weekly': 'Weekly',
+    'bi-weekly': 'Bi-weekly',
+    'monthly': 'Monthly',
+    'quarterly': 'Quarterly',
+  };
+  return labels[frequency] || frequency;
+};
+
+// Format date
+const formatDate = (date) => {
+  if (!date) return 'Never';
+  return new Date(date).toLocaleString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+};
+
+// Load schedules on mount
+onMounted(() => {
+  fetchSchedules();
+});
 </script>
 
 <template>
@@ -107,25 +256,35 @@ const handleReportScheduleSubmit = async () => {
       </div>
 
       <!-- Main Content Grid -->
-      <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div class="grid gap-6 lg:grid-cols-3">
 
-        <!-- Automated Report Scheduling Card -->
+        <!-- Create/Edit Schedule Form Card -->
         <Card class="lg:col-span-1">
           <CardHeader>
-            <div class="flex items-center gap-2">
-              <Bell class="h-5 w-5" />
-              <CardTitle>Automated Reports</CardTitle>
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <Bell class="h-5 w-5" />
+                <CardTitle>{{ isEditMode ? 'Edit Schedule' : 'New Schedule' }}</CardTitle>
+              </div>
+              <Button
+                  v-if="isEditMode"
+                  variant="ghost"
+                  size="sm"
+                  @click="resetForm"
+              >
+                Cancel
+              </Button>
             </div>
             <CardDescription>
-              Schedule automated reports to be sent to your email
+              {{ isEditMode ? 'Update the scheduled report settings' : 'Schedule automated reports to be sent to your email' }}
             </CardDescription>
           </CardHeader>
           <CardContent class="space-y-4">
             <form @submit.prevent="handleReportScheduleSubmit" class="space-y-4">
               <!-- Enable/Disable Toggle -->
-              <div class="flex items-center justify-between space-x-2 rounded-lg border p-4 dark:border-gray-700">
+              <div class="flex items-center justify-between space-x-2 rounded-lg border p-4">
                 <div class="flex-1 space-y-0.5">
-                  <Label class="text-base font-medium">Enable Automated Reports</Label>
+                  <Label class="text-base font-medium">Enable Schedule</Label>
                   <p class="text-sm text-muted-foreground">
                     Receive scheduled reports automatically
                   </p>
@@ -173,41 +332,18 @@ const handleReportScheduleSubmit = async () => {
                 </Select>
               </div>
 
-              <!-- Report Content Options -->
-              <div class="space-y-3">
-                <Label class="text-sm font-medium">Include in Report</Label>
-
-                <div class="flex items-center space-x-2">
-                  <Switch
-                      v-model:checked="reportForm.includePatientStats"
-                      id="include-patients"
+              <!-- Scheduled Time -->
+              <div class="space-y-2">
+                <Label for="scheduled-time">Scheduled Time</Label>
+                <div class="relative">
+                  <Clock class="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                      id="scheduled-time"
+                      v-model="reportForm.scheduled_time"
+                      type="time"
+                      class="pl-9"
                       :disabled="!isEnabled"
                   />
-                  <Label for="include-patients" class="text-sm font-normal cursor-pointer">
-                    Patient Statistics
-                  </Label>
-                </div>
-
-                <div class="flex items-center space-x-2">
-                  <Switch
-                      v-model:checked="reportForm.includeVisitStats"
-                      id="include-visits"
-                      :disabled="!isEnabled"
-                  />
-                  <Label for="include-visits" class="text-sm font-normal cursor-pointer">
-                    Visit Analytics
-                  </Label>
-                </div>
-
-                <div class="flex items-center space-x-2">
-                  <Switch
-                      v-model:checked="reportForm.includeCharts"
-                      id="include-charts"
-                      :disabled="!isEnabled"
-                  />
-                  <Label for="include-charts" class="text-sm font-normal cursor-pointer">
-                    Charts & Visualizations
-                  </Label>
                 </div>
               </div>
 
@@ -219,14 +355,123 @@ const handleReportScheduleSubmit = async () => {
                   class="w-full"
                   :disabled="isSubmitting || !isEnabled"
               >
-                <Settings class="mr-2 h-4 w-4" />
-                {{ isSubmitting ? 'Saving...' : 'Save Schedule' }}
+                <Plus v-if="!isEditMode" class="mr-2 h-4 w-4" />
+                <Settings v-else class="mr-2 h-4 w-4" />
+                {{ isSubmitting ? 'Saving...' : (isEditMode ? 'Update Schedule' : 'Create Schedule') }}
               </Button>
             </form>
           </CardContent>
         </Card>
 
-        <!-- ... rest of your template remains the same ... -->
+        <!-- Existing Schedules Card -->
+        <Card class="lg:col-span-2">
+          <CardHeader>
+            <div class="flex items-center justify-between">
+              <div>
+                <CardTitle>Scheduled Reports</CardTitle>
+                <CardDescription>
+                  Manage your automated report schedules
+                </CardDescription>
+              </div>
+              <Button
+                  variant="outline"
+                  size="sm"
+                  @click="fetchSchedules"
+                  :disabled="isLoadingSchedules"
+              >
+                {{ isLoadingSchedules ? 'Loading...' : 'Refresh' }}
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <!-- Loading State -->
+            <div v-if="isLoadingSchedules" class="flex items-center justify-center py-8">
+              <div class="text-muted-foreground">Loading schedules...</div>
+            </div>
+
+            <!-- Empty State -->
+            <div v-else-if="schedules.length === 0" class="flex flex-col items-center justify-center py-12 text-center">
+              <Calendar class="h-12 w-12 text-muted-foreground mb-4" />
+              <h3 class="text-lg font-semibold mb-2">No Schedules Yet</h3>
+              <p class="text-sm text-muted-foreground mb-4">
+                Create your first automated report schedule to get started.
+              </p>
+            </div>
+
+            <!-- Schedules List -->
+            <div v-else class="space-y-4">
+              <div
+                  v-for="schedule in schedules"
+                  :key="schedule.id"
+                  class="border rounded-lg p-4 hover:bg-accent/50 transition-colors"
+                  :class="{ 'border-primary': editingScheduleId === schedule.id }"
+              >
+                <div class="flex items-start justify-between">
+                  <!-- Schedule Info -->
+                  <div class="flex-1 space-y-2">
+                    <div class="flex items-center gap-2">
+                      <Mail class="h-4 w-4 text-muted-foreground" />
+                      <span class="font-medium">{{ schedule.email }}</span>
+                      <Badge :variant="schedule.is_enabled ? 'default' : 'secondary'">
+                        <CheckCircle2 v-if="schedule.is_enabled" class="h-3 w-3 mr-1" />
+                        <XCircle v-else class="h-3 w-3 mr-1" />
+                        {{ schedule.is_enabled ? 'Active' : 'Inactive' }}
+                      </Badge>
+                    </div>
+
+                    <div class="flex items-center gap-4 text-sm text-muted-foreground">
+                      <div class="flex items-center gap-1">
+                        <Calendar class="h-3 w-3" />
+                        {{ getFrequencyLabel(schedule.frequency) }}
+                      </div>
+                      <div class="flex items-center gap-1">
+                        <Clock class="h-3 w-3" />
+                        {{ schedule.scheduled_time }}
+                      </div>
+                    </div>
+
+                    <div v-if="schedule.last_run_at" class="text-xs text-muted-foreground">
+                      Last run: {{ formatDate(schedule.last_run_at) }}
+                    </div>
+                  </div>
+
+                  <!-- Actions -->
+                  <div class="flex items-center gap-2">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        @click="toggleScheduleStatus(schedule)"
+                        :title="schedule.is_enabled ? 'Disable' : 'Enable'"
+                    >
+                      <CheckCircle2 v-if="schedule.is_enabled" class="h-4 w-4" />
+                      <XCircle v-else class="h-4 w-4" />
+                    </Button>
+
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        @click="editSchedule(schedule)"
+                        title="Edit"
+                    >
+                      <Edit class="h-4 w-4" />
+                    </Button>
+
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        @click="deleteSchedule(schedule.id, schedule.email)"
+                        title="Delete"
+                        class="text-destructive hover:text-destructive"
+                    >
+                      <Trash2 class="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
       </div>
     </div>
   </AppLayout>

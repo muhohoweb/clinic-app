@@ -41,7 +41,13 @@ Route::middleware(['auth'])->group(function () {
 
 
 
+
+    Route::get('/scheduled-reports', [ScheduledReportController::class, 'index']);
+    Route::get('/scheduled-reports/{id}', [ScheduledReportController::class, 'show']);
     Route::post('/scheduled-reports', [ScheduledReportController::class, 'store']);
+    Route::put('/scheduled-reports/{id}', [ScheduledReportController::class, 'update']);
+    Route::delete('/scheduled-reports/{id}', [ScheduledReportController::class, 'destroy']);
+    Route::post('/scheduled-reports/{id}/toggle', [ScheduledReportController::class, 'toggleStatus']);
     Route::get('/cron/trigger', [ScheduledReportController::class, 'trigger']);
 });
 
