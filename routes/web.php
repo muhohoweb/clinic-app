@@ -54,12 +54,20 @@ Route::middleware(['auth'])->group(function () {
 
 
 
-// M-Pesa Settings Routes
-    Route::get('/mpesa-settings', [MpesaSettingController::class, 'index']);
-    Route::post('/mpesa-settings', [MpesaSettingController::class, 'store']);
-    Route::put('/mpesa-settings/{id}', [MpesaSettingController::class, 'update']);
-    Route::delete('/mpesa-settings/{id}', [MpesaSettingController::class, 'destroy']);
-    Route::post('/mpesa-settings/test-connection', [MpesaSettingController::class, 'testConnection']);
+    // M-Pesa Settings Routes (existing)
+    Route::get('mpesa-settings', [MpesaSettingController::class, 'index']);
+    Route::post('mpesa-settings', [MpesaSettingController::class, 'store']);
+    Route::put('mpesa-settings/{id}', [MpesaSettingController::class, 'update']);
+    Route::delete('mpesa-settings/{id}', [MpesaSettingController::class, 'destroy']);
+    Route::post('mpesa-settings/test-connection', [MpesaSettingController::class, 'testConnection']);
+
+    // M-Pesa Callback Route (new)
+    Route::post('api/mpesa/callback', [MpesaSettingController::class, 'callback']);
+
+    // Payment Routes (new)
+    Route::post('payments/mpesa/stk-push', [PaymentController::class, 'mpesaStkPush']);
+    Route::post('payments/mpesa/check-status', [PaymentController::class, 'checkMpesaStatus']);
+
 });
 
 require __DIR__.'/settings.php';

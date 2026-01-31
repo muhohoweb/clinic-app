@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\MpesaSetting;
+use App\Models\Payment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
@@ -263,6 +264,92 @@ class MpesaSettingController extends Controller
                 'success' => false,
                 'message' => 'Connection test failed: ' . $e->getMessage()
             ], 500);
+        }
+    }
+
+    /**
+     * Handle M-Pesa callback
+     */
+    public function callback(Request $request)
+    {
+        $data = $request->all();
+
+        Log::info('M-Pesa Callback Received', ['data' => $data]);
+
+        try {
+            // Extract callback data
+            $resultCode = $data['Body']['stkCallback']['ResultCode'] ?? null;
+            $resultDesc = $data['Body']['stkCallback']['ResultDesc'] ?? null;
+            $checkoutRequestID = $data['Body']['stkCallback']['CheckoutRequestID'] ?? null;
+
+            if (!$checkoutRequestID) {
+                Log::error('M-Pesa callback missing CheckoutRequestID');
+                return response()->json(['ResultCode' => 1, 'ResultDesc' => 'Missing CheckoutRequestID']);
+            }
+
+            // Find payment by checkout request ID
+            $payment = Payment::where('mpesa_transaction_id', $checkoutRequestID)->first();
+
+            if (!$payment) {
+                Log::warning('Payment not found for CheckoutRequestID', ['checkout_request_id' => $checkoutRequestID]);
+                return response()->json(['ResultCode' => 1, 'ResultDesc' => 'Payment not found']);
+            }
+
+            // Check if payment was successful
+            if ($resultCode === 0) {
+                // Payment successful
+                $callbackMetadata = $data['Body']['stkCallback']['CallbackMetadata']['Item'] ?? [];
+
+                $mpesaReceiptNumber = null;
+                $transactionDate = null;
+                $phoneNumber = null;
+
+                foreach ($callbackMetadata as $item) {
+                    if ($item['Name'] === 'MpesaReceiptNumber') {
+                        $mpesaReceiptNumber = $item['Value'];
+                    } elseif ($item['Name'] === 'TransactionDate') {
+                        $transactionDate = $item['Value'];
+                    } elseif ($item['Name'] === 'PhoneNumber') {
+                        $phoneNumber = $item['Value'];
+                    }
+                }
+
+                $payment->update([
+                    'amount_paid' => $payment->amount_charged,
+                    'balance' => 0,
+                    'payment_status' => 'completed',
+                    'mpesa_transaction_id' => $mpesaReceiptNumber,
+                    'mpesa_phone_number' => $phoneNumber ?? $payment->mpesa_phone_number,
+                    'notes' => "M-Pesa payment completed. Receipt: {$mpesaReceiptNumber}",
+                ]);
+
+                Log::info('M-Pesa payment completed', [
+                    'payment_id' => $payment->id,
+                    'receipt_number' => $mpesaReceiptNumber,
+                ]);
+            } else {
+                // Payment failed
+                $payment->update([
+                    'payment_status' => 'failed',
+                    'notes' => "M-Pesa payment failed: {$resultDesc}",
+                ]);
+
+                Log::warning('M-Pesa payment failed', [
+                    'payment_id' => $payment->id,
+                    'result_code' => $resultCode,
+                    'result_desc' => $resultDesc,
+                ]);
+            }
+
+            return response()->json(['ResultCode' => 0, 'ResultDesc' => 'Success']);
+
+        } catch (\Exception $e) {
+            Log::error('M-Pesa callback exception', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json(['ResultCode' => 1, 'ResultDesc' => 'Internal error']);
         }
     }
 }

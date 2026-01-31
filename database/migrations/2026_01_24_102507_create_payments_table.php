@@ -21,6 +21,7 @@ return new class extends Migration
             $table->enum('mode_of_payment', ['cash', 'mpesa', 'bank_transfer', 'insurance']);
             $table->string('mpesa_transaction_id')->nullable();
             $table->string('mpesa_phone_number')->nullable();
+            $table->enum('payment_status', ['pending', 'completed', 'failed', 'cancelled'])->default('pending');
             $table->text('notes')->nullable();
             $table->timestamps();
         });
