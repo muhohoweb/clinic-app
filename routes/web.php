@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\MpesaSettingController;
 use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PatientsController;
@@ -49,6 +50,16 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/scheduled-reports/{id}', [ScheduledReportController::class, 'destroy']);
     Route::post('/scheduled-reports/{id}/toggle', [ScheduledReportController::class, 'toggleStatus']);
     Route::get('/cron/trigger', [ScheduledReportController::class, 'trigger']);
+
+
+
+
+// M-Pesa Settings Routes
+    Route::get('/mpesa-settings', [MpesaSettingController::class, 'index']);
+    Route::post('/mpesa-settings', [MpesaSettingController::class, 'store']);
+    Route::put('/mpesa-settings/{id}', [MpesaSettingController::class, 'update']);
+    Route::delete('/mpesa-settings/{id}', [MpesaSettingController::class, 'destroy']);
+    Route::post('/mpesa-settings/test-connection', [MpesaSettingController::class, 'testConnection']);
 });
 
 require __DIR__.'/settings.php';

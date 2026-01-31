@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\MpesaSettingController;
 use App\Http\Controllers\Settings\PasswordController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\TwoFactorAuthenticationController;
@@ -28,4 +29,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('settings/two-factor', [TwoFactorAuthenticationController::class, 'show'])
         ->name('two-factor.show');
+
+    // M-Pesa Settings Routes
+    Route::get('settings/mpesa', function () {
+        return Inertia::render('settings/MpesaSettings');
+    })->name('mpesa.settings');
+
+    // M-Pesa API Routes
+    Route::get('mpesa-settings', [MpesaSettingController::class, 'index']);
+    Route::post('mpesa-settings', [MpesaSettingController::class, 'store']);
+    Route::put('mpesa-settings/{id}', [MpesaSettingController::class, 'update']);
+    Route::delete('mpesa-settings/{id}', [MpesaSettingController::class, 'destroy']);
+    Route::post('mpesa-settings/test-connection', [MpesaSettingController::class, 'testConnection']);
 });
