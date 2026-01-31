@@ -5,35 +5,39 @@ import { Separator } from '@/components/ui/separator';
 import { useCurrentUrl } from '@/composables/useCurrentUrl';
 import { toUrl } from '@/lib/utils';
 import { edit as editAppearance } from '@/routes/appearance';
-import { settings as mpesaSettings } from '@/routes/mpesa'; // Add this import
+import { settings as mpesaSettings } from '@/routes/mpesa';
 import { edit as editProfile } from '@/routes/profile';
 import { show } from '@/routes/two-factor';
 import { edit as editPassword } from '@/routes/user-password';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
-import { Smartphone } from 'lucide-vue-next'; // Add this import
+import { User, Lock, Shield, Palette, Smartphone } from 'lucide-vue-next';
 
 const sidebarNavItems: NavItem[] = [
   {
     title: 'Profile',
     href: editProfile(),
+    icon: User,
   },
   {
     title: 'Password',
     href: editPassword(),
+    icon: Lock,
   },
   {
     title: 'Two-Factor Auth',
     href: show(),
+    icon: Shield,
   },
   {
     title: 'Appearance',
     href: editAppearance(),
+    icon: Palette,
   },
   {
     title: 'M-Pesa',
     href: mpesaSettings(),
-    icon: Smartphone, // Optional: add icon
+    icon: Smartphone,
   },
 ];
 
